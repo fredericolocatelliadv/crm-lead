@@ -1,150 +1,174 @@
-# TODO - SEO, Marketing e Privacidade
+# TODO - Estado Atual e Próximas Entregas
 
-Este arquivo guia somente a feature de SEO, marketing, rastreamento e privacidade do site público.
+Este arquivo é o checklist vivo do projeto. Ele deve orientar a próxima etapa de implementação sem substituir o `AGENTS.md`, que permanece como arquivo de regras.
 
-## Objetivo
+Atualizado em: 14/05/2026
 
-Preparar o site para tráfego pago, mensuração de conversões, busca orgânica e controles básicos de privacidade sem exigir alteração de código toda vez que a equipe precisar configurar Google, Meta, SEO ou documentos legais.
+## Estado Geral
 
-## Escopo
+O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, SEO, marketing, privacidade e perfil do usuário.
 
-- Criar configurações editáveis no CRM para SEO e marketing.
-- Permitir que o cliente informe IDs oficiais de rastreamento, sem colar scripts livres.
-- Carregar tags somente no site público, nunca dentro do CRM.
-- Registrar eventos de conversão quando um lead for capturado.
-- Preservar UTMs e parâmetros de campanha no lead.
-- Melhorar metadados, canonical, sitemap e robots do site público.
-- Publicar Política de Privacidade, Termos de Uso e Política de Cookies.
-- Permitir edição desses documentos pelo CRM.
-- Registrar ciência de privacidade e consentimento opcional de marketing nos leads do site.
+Última entrega registrada:
 
-## Fora do Escopo
+- menu lateral do CRM recolhível;
+- botão de recolher/expandir dentro do menu, acima do Dashboard;
+- menu de perfil no topo ao lado da troca de tema;
+- página `/crm/perfil`;
+- edição de dados básicos do usuário;
+- upload de foto de perfil para Supabase Storage;
+- bucket `profile-avatars`;
+- coluna `profiles.avatar_storage_path`;
+- correção do aviso do React sobre formulário com Server Action;
+- commit enviado ao GitHub: `9935316 Add CRM user profile management`.
 
-- Não criar dashboard completo de mídia paga.
-- Não criar gerenciador de campanhas.
-- Não substituir Google Analytics, Google Ads, Search Console, Meta Business ou Meta Events Manager.
-- Não permitir JavaScript livre inserido pelo usuário.
-- Não alterar a IA, WhatsApp, pipeline ou CRM comercial além do necessário para origem, UTM e conversão.
+## Validações Recentes
 
-## Decisão Técnica
+- [x] `npm.cmd run typecheck`
+- [x] `npm.cmd run lint`
+- [x] `npm.cmd run build`
+- [x] Verificado bucket `profile-avatars` no Supabase.
+- [x] Verificadas policies de Storage para avatar de perfil.
+- [x] Verificada coluna `profiles.avatar_storage_path`.
+- [x] WhatsApp com QR Code, conexão, envio e recebimento funcionando em teste real.
+- [x] Mensagens recebidas do WhatsApp aparecem no CRM.
+- [x] IA respondeu automaticamente em teste real.
+- [x] `Assumir` e `Pausar IA` interrompem resposta automática sem bloquear mensagens humanas.
 
-- Usar campos controlados para IDs oficiais, evitando área de script livre por segurança.
-- Preferir Google Tag Manager como camada principal de marketing.
-- Suportar campos diretos para GA4, Meta Pixel, verificações de domínio e SEO básico.
-- Não enviar nome, telefone, e-mail ou conteúdo sensível em eventos de marketing.
-- Executar lógica privilegiada no servidor quando houver persistência em banco.
-- Manter o CRM sem scripts de marketing para evitar rastreamento interno da equipe.
+## Site Público, SEO, Marketing e Privacidade
 
-## Fase 1 - Auditoria do Projeto
+- [x] Configurações editáveis para SEO e marketing no CRM.
+- [x] Campos controlados para Google Tag Manager, GA4, Meta Pixel, Search Console e verificação Meta.
+- [x] Tags carregadas somente no site público.
+- [x] Eventos de conversão sem dados pessoais.
+- [x] Captura de UTMs, `gclid` e `fbclid`.
+- [x] `sitemap.ts` e `robots.ts`.
+- [x] Metadata, canonical, Open Graph e Twitter Card.
+- [x] Política de Privacidade, Termos de Uso e Política de Cookies.
+- [x] Banner de cookies com aceitar, recusar e personalizar.
+- [x] Personalização de cookies em modal, evitando poluição visual.
+- [x] Registro de ciência de privacidade e consentimento opcional nos leads.
+- [ ] Revisão jurídica final dos documentos legais pelo escritório.
+- [ ] Testar site público com GTM real configurado.
+- [ ] Testar site público com Meta Pixel real configurado.
+- [ ] Confirmar no navegador que eventos não disparam dentro do CRM.
+- [ ] Confirmar no navegador que payloads de marketing não carregam nome, telefone, e-mail ou mensagem.
 
-- [x] Revisar configurações atuais do site em banco e código.
-- [x] Confirmar onde as configurações públicas são lidas no site.
-- [x] Confirmar como o formulário público cria lead.
-- [x] Confirmar como o formulário simples de WhatsApp cria lead.
-- [x] Confirmar se já existe sitemap, robots e metadados por página.
-- [x] Mapear onde inserir os eventos sem duplicar conversões.
+## CRM e Navegação
 
-## Fase 2 - Banco de Dados
+- [x] Dashboard comercial.
+- [x] Leads.
+- [x] Pipeline.
+- [x] Conversas.
+- [x] WhatsApp.
+- [x] Clientes.
+- [x] Blog.
+- [x] Relatórios.
+- [x] Usuários.
+- [x] Configurações.
+- [x] Assistente IA.
+- [x] Perfil do usuário.
+- [x] Tema claro/escuro.
+- [x] Menu lateral recolhível no desktop.
+- [x] Menu mobile fecha ao escolher uma página.
+- [x] Destaque ativo do menu usa a rota real, sem manter Dashboard marcado fora da página.
+- [ ] Validar visualmente todas as telas principais em desktop e celular antes da homologação.
+- [ ] Revisar estados vazios e mensagens de erro em telas operacionais.
 
-- [x] Criar migration para campos de SEO e marketing em configurações do site.
-- [x] Adicionar campos para URL base, título SEO, descrição SEO e imagem social padrão.
-- [x] Adicionar campos para Google Tag Manager, Google Analytics 4, Meta Pixel, Google Search Console e verificação de domínio da Meta.
-- [x] Adicionar opção para ativar ou pausar rastreamento de marketing.
-- [x] Definir como guardar UTMs no lead sem quebrar dados existentes.
-- [x] Validar que chaves sensíveis continuam fora do navegador quando não forem públicas.
+## Perfil do Usuário
 
-## Fase 3 - CRM: Configurações de SEO e Marketing
+- [x] Criar página `/crm/perfil`.
+- [x] Criar menu de perfil no header.
+- [x] Permitir edição de nome completo.
+- [x] Permitir edição de telefone, cargo e departamento quando disponíveis.
+- [x] Permitir upload de foto de perfil.
+- [x] Salvar foto no bucket `profile-avatars`.
+- [x] Remover avatar antigo ao substituir imagem.
+- [x] Validar tamanho máximo de 3 MB.
+- [x] Validar MIME types de imagem.
+- [x] Remover `encType` manual de formulário com Server Action.
+- [ ] Fazer teste visual autenticado de troca real de foto no CRM.
 
-- [x] Criar área de configuração no painel administrativo.
-- [x] Separar visualmente SEO, Google, Meta e conversões.
-- [x] Usar campos simples com ajuda curta para usuários leigos.
-- [x] Validar formato dos IDs antes de salvar.
-- [x] Exibir status claro: configurado, ausente ou pausado.
-- [x] Evitar textos técnicos de implementação na tela do cliente.
+## WhatsApp
 
-## Fase 4 - Tags no Site Público
+- [x] Integração server-side com Evolution API.
+- [x] Página `/crm/whatsapp`.
+- [x] QR Code de conexão.
+- [x] Atualização automática de estado da conexão.
+- [x] Desativar uso no CRM sem apagar histórico.
+- [x] Reativar conexão.
+- [x] Desconectar pelo endpoint da Evolution.
+- [x] Excluir instância pela Evolution e limpar estado local.
+- [x] Confirmações profissionais para ações críticas.
+- [x] Receber texto, imagem e áudio.
+- [x] Enviar texto, imagem e áudio pelo CRM.
+- [x] Criar contato e lead automaticamente quando necessário.
+- [x] Não criar lead novo para mensagem `fromMe`.
+- [x] Persistir mensagem antes de IA ou automação.
+- [ ] Testar falha da Evolution API sem perder mensagem ou histórico.
+- [ ] Testar cliente convertido falando novamente.
+- [ ] Testar lead perdido voltando.
 
-- [x] Criar componente server/client adequado para carregar tags no site público.
-- [x] Carregar Google Tag Manager quando houver ID configurado.
-- [x] Carregar GA4 direto somente se for necessário e não duplicar com GTM.
-- [x] Carregar Meta Pixel quando houver ID configurado.
-- [x] Inserir meta tag de verificação do Google Search Console.
-- [x] Inserir meta tag de verificação de domínio da Meta.
-- [x] Garantir que nenhuma tag seja carregada em rotas do CRM.
+## Inteligência Artificial
 
-## Fase 5 - Eventos de Conversão
+- [x] Página `/crm/ia`.
+- [x] Configuração por abas funcionais: operação, comportamento, contexto e teste.
+- [x] Gemini 2.5 Flash como modelo configurado.
+- [x] Chamada ao Gemini somente no servidor.
+- [x] Saída validada antes de salvar.
+- [x] Resposta automática pelo WhatsApp quando a conversa permite.
+- [x] Registro em `ai_sessions`, `ai_messages` e `ai_classifications`.
+- [x] Selo no chat para mensagem gerada pela IA.
+- [x] Botão `Resumo da IA` abre modal com classificação e dados coletados.
+- [x] Botão `Assumir` pausa IA por conversa.
+- [x] Botão `Pausar IA` pausa IA por conversa.
+- [x] Prompt base preenchido com comportamento profissional e seguro.
+- [ ] Testar pergunta jurídica complexa.
+- [ ] Testar tentativa de fazer a IA prometer resultado.
+- [ ] Testar falha do Gemini.
+- [ ] Avaliar fila/job assíncrono para produção caso o webhook fique lento.
 
-- [x] Criar utilitário único para eventos de marketing do site.
-- [x] Disparar conversão ao concluir o formulário principal de contato.
-- [x] Disparar conversão ao concluir o formulário simples de WhatsApp.
-- [x] Padronizar evento GA4 como `generate_lead`.
-- [x] Padronizar evento Meta como `Lead`.
-- [x] Enviar apenas dados genéricos: origem, área, tipo de formulário e página.
-- [x] Não enviar dados pessoais nem mensagem do contato para Google ou Meta.
+## Banco, Segurança e Produção
 
-## Fase 6 - UTMs e Origem Comercial
+- [x] Supabase como Postgres, Auth, Storage e Realtime.
+- [x] RLS ativo nas tabelas públicas verificadas.
+- [x] Service role isolada no servidor.
+- [x] Storage privado para anexos do CRM.
+- [x] Storage público controlado para imagens do site, blog e avatar.
+- [x] Migrations recentes versionadas em `supabase/migrations`.
+- [ ] Ativar proteção contra senhas vazadas no Supabase Auth.
+- [ ] Revisar grants do role `anon` antes de produção.
+- [ ] Revisar policies duplicadas apontadas por advisor de performance.
+- [ ] Criar ou revisar rate limit para endpoints públicos de lead.
+- [ ] Validar backup e recuperação antes de produção.
 
-- [x] Capturar `utm_source`, `utm_medium`, `utm_campaign`, `utm_term` e `utm_content`.
-- [x] Capturar `gclid` e `fbclid` quando existirem.
-- [x] Guardar primeira página de entrada e referência.
-- [x] Preservar esses dados até a criação do lead.
-- [x] Salvar UTMs no lead para análise comercial.
-- [x] Mostrar origem e campanha no CRM de forma objetiva quando houver dados.
+## Comandos de Validação
 
-## Fase 7 - SEO Técnico
+No PowerShell deste projeto, usar:
 
-- [x] Revisar metadata global do site público.
-- [x] Criar ou ajustar `sitemap.ts`.
-- [x] Criar ou ajustar `robots.ts`.
-- [x] Definir canonical para páginas públicas.
-- [x] Garantir Open Graph e Twitter Card com imagem padrão.
-- [x] Verificar metadata das páginas do blog/notícias.
-- [x] Manter o site rápido, sem scripts desnecessários.
+```powershell
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run build
+```
 
-## Fase 8 - Consentimento e LGPD
+Quando alterar banco:
 
-- [x] Avaliar banner simples de consentimento para cookies de marketing.
-- [x] Permitir que scripts de marketing respeitem consentimento quando a opção estiver ativa.
-- [x] Preparar texto claro para o usuário final, sem juridiquês excessivo.
-- [x] Garantir que leads continuem funcionando mesmo se o usuário recusar marketing.
-- [x] Separar cookies necessários de cookies opcionais de medição e marketing.
-- [x] Permitir aceitar todos, recusar opcionais ou personalizar preferências.
-- [x] Permitir reabrir preferências pelo rodapé quando o consentimento estiver ativo.
+- criar migration limpa;
+- validar RLS e Storage policies;
+- consultar Supabase pelo MCP;
+- rodar advisors quando a mudança tocar segurança ou performance.
 
-## Fase 9 - Documentos Legais
+Quando alterar WhatsApp:
 
-- [x] Criar migration para documentos legais em `site_settings`.
-- [x] Criar campos de consentimento em `leads`.
-- [x] Criar tela no CRM para editar Política de Privacidade, Termos de Uso e Política de Cookies.
-- [x] Criar páginas públicas para os três documentos.
-- [x] Adicionar links legais no rodapé do site.
-- [x] Incluir páginas legais no sitemap.
-- [x] Registrar versão da política e ciência de privacidade nos leads do site.
-- [x] Registrar consentimento opcional de comunicação/marketing separado do envio do formulário.
-- [x] Mostrar consentimentos na ficha do lead quando houver registro.
-- [ ] Revisão jurídica final dos textos pelo escritório antes de produção.
+- testar QR Code;
+- testar envio e recebimento real;
+- testar desconexão, desativação, reativação e exclusão;
+- confirmar que mensagem recebida é salva antes da IA.
 
-## Fase 10 - Validação
+Quando alterar IA:
 
-- [x] Aplicar e verificar migration de documentos legais e consentimentos no Supabase.
-- [x] Rodar `npm.cmd run typecheck`.
-- [x] Rodar `npm.cmd run lint`.
-- [x] Rodar `npm.cmd run build`.
-- [x] Confirmar que as páginas legais respondem HTTP 200 no localhost.
-- [x] Testar site público sem IDs configurados.
-- [ ] Testar site público com GTM configurado.
-- [ ] Testar site público com Meta Pixel configurado.
-- [ ] Testar criação de lead pelo formulário principal.
-- [ ] Testar criação de lead pelo formulário simples de WhatsApp.
-- [ ] Confirmar que eventos não disparam dentro do CRM.
-- [ ] Confirmar que dados pessoais não aparecem no payload de marketing.
-
-## Referências Oficiais
-
-- Google Tag Manager: https://support.google.com/tagmanager/answer/14842164
-- Google Analytics 4: https://developers.google.com/analytics/devguides/collection/ga4
-- Google Search Central: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
-- Meta Pixel: https://developers.facebook.com/docs/meta-pixel/
-- Next.js Metadata API: https://nextjs.org/docs/app/api-reference/functions/generate-metadata
-- Next.js Sitemap: https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap
-- Next.js Robots: https://nextjs.org/docs/app/api-reference/file-conventions/metadata/robots
+- testar no simulador da página `/crm/ia`;
+- testar com WhatsApp real;
+- confirmar que humano consegue assumir;
+- confirmar que classificação aparece para a equipe;
+- confirmar que falha da IA não quebra o atendimento.

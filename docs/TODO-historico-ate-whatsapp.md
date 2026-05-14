@@ -61,7 +61,7 @@ Objetivo: preparar a base visual, estrutural e tecnica do CRM antes de criar reg
 - [x] Definir layout visual do CRM sem alterar o site publico.
 - [x] Registrar regra para nunca exibir informacoes de programador no CRM do cliente.
 - [x] Ajustar dashboard para ocupar melhor monitores largos sem grandes vazios no centro.
-- [x] Remover rÃ³tulos internos/de desenvolvimento da interface do CRM.
+- [x] Remover rótulos internos/de desenvolvimento da interface do CRM.
 
 ## Fase 2 - Etapa 2 de 12 - Autenticacao, Usuarios e Permissoes
 
@@ -203,17 +203,17 @@ Status: feito.
 - [x] Criar lista de conversas.
 - [x] Criar detalhe da conversa.
 - [x] Vincular conversa ao lead.
-- [x] Exibir histÃ³rico de mensagens.
+- [x] Exibir histórico de mensagens.
 - [x] Diferenciar mensagem recebida, enviada e nota interna.
 - [x] Criar campo de resposta sem envio externo ainda.
-- [x] Criar observaÃ§Ãµes internas da conversa.
-- [x] Criar estados: nÃ£o respondido, aguardando cliente, em atendimento, finalizado.
-- [x] Criar filtros: nÃ£o respondidos, urgentes, meus atendimentos, aguardando cliente.
-- [x] Permitir atribuir responsÃ¡vel pela conversa.
-- [x] Permitir transferir atendimento entre usuÃ¡rios.
-- [x] Habilitar atualizaÃ§Ã£o em tempo real da caixa de atendimento com Supabase Realtime.
-- [x] Atualizar conversas e mensagens recebidas sem exigir F5 na pÃ¡gina.
-- [x] Fixar o campo de resposta e manter a rolagem somente dentro do histÃ³rico da conversa.
+- [x] Criar observações internas da conversa.
+- [x] Criar estados: não respondido, aguardando cliente, em atendimento, finalizado.
+- [x] Criar filtros: não respondidos, urgentes, meus atendimentos, aguardando cliente.
+- [x] Permitir atribuir responsável pela conversa.
+- [x] Permitir transferir atendimento entre usuários.
+- [x] Habilitar atualização em tempo real da caixa de atendimento com Supabase Realtime.
+- [x] Atualizar conversas e mensagens recebidas sem exigir F5 na página.
+- [x] Fixar o campo de resposta e manter a rolagem somente dentro do histórico da conversa.
 
 ## Fase 9 - Etapa 9 de 12 - Clientes Convertidos
 
@@ -223,13 +223,13 @@ Status: feito.
 
 - [x] Criar listagem de clientes convertidos.
 - [x] Criar tela de detalhe do cliente.
-- [x] Manter vÃ­nculo com lead original.
-- [x] Manter histÃ³rico comercial.
-- [x] Registrar data de conversÃ£o.
-- [x] Registrar responsÃ¡vel pela conversÃ£o.
-- [x] Permitir observaÃ§Ãµes bÃ¡sicas.
-- [x] Permitir anexos bÃ¡sicos quando necessÃ¡rio.
-- [x] Bloquear qualquer tentativa de criar controle processual dentro deste mÃ³dulo.
+- [x] Manter vínculo com lead original.
+- [x] Manter histórico comercial.
+- [x] Registrar data de conversão.
+- [x] Registrar responsável pela conversão.
+- [x] Permitir observações básicas.
+- [x] Permitir anexos básicos quando necessário.
+- [x] Bloquear qualquer tentativa de criar controle processual dentro deste módulo.
 
 ## Fase 10 - Etapa 10 de 12 - Blog, Site e Configuracoes pelo CRM
 
@@ -243,84 +243,84 @@ Status: feito.
 - [x] Permitir imagem de capa.
 - [x] Permitir autor.
 - [x] Permitir categoria.
-- [x] Permitir data de publicaÃ§Ã£o.
-- [x] Validar listagem pÃºblica de notÃ­cias com dados reais.
-- [x] Validar pÃ¡gina individual de notÃ­cia com dados reais.
+- [x] Permitir data de publicação.
+- [x] Validar listagem pública de notícias com dados reais.
+- [x] Validar página individual de notícia com dados reais.
 - [x] Criar gerenciamento de equipe.
 - [x] Criar gerenciamento de depoimentos.
 - [x] Criar gerenciamento de FAQ.
-- [x] Criar configuraÃ§Ãµes essenciais do site: WhatsApp pÃºblico, e-mail, endereÃ§o e redes sociais.
-- [x] Garantir que alteraÃ§Ãµes de copy/layout/identidade visual nÃ£o sejam feitas sem pedido explÃ­cito.
+- [x] Criar configurações essenciais do site: WhatsApp público, e-mail, endereço e redes sociais.
+- [x] Garantir que alterações de copy/layout/identidade visual não sejam feitas sem pedido explícito.
 
-## Fase 11 - Etapa 11 de 12 - RelatÃ³rios e ConfiguraÃ§Ãµes Operacionais
+## Fase 11 - Etapa 11 de 12 - Relatórios e Configurações Operacionais
 
 Status: em andamento.
 
-Objetivo: entregar visÃ£o gerencial simples e organizar configuraÃ§Ãµes operacionais do atendimento sem transformar o CRM em sistema complexo.
+Objetivo: entregar visão gerencial simples e organizar configurações operacionais do atendimento sem transformar o CRM em sistema complexo.
 
-### RelatÃ³rios em `/crm/relatorios`
+### Relatórios em `/crm/relatorios`
 
-- [x] Criar pÃ¡gina de relatÃ³rios.
-- [x] Criar filtro por perÃ­odo.
-- [x] Criar relatÃ³rio de leads por perÃ­odo.
-- [x] Criar relatÃ³rio de leads por origem.
-- [x] Criar relatÃ³rio de leads por Ã¡rea jurÃ­dica.
-- [x] Criar relatÃ³rio de conversÃ£o.
-- [x] Criar relatÃ³rio de atendimentos por responsÃ¡vel.
-- [x] Criar relatÃ³rio de tempo de resposta quando houver mensagens.
-- [x] Criar exportaÃ§Ã£o simples quando fizer sentido.
+- [x] Criar página de relatórios.
+- [x] Criar filtro por período.
+- [x] Criar relatório de leads por período.
+- [x] Criar relatório de leads por origem.
+- [x] Criar relatório de leads por área jurídica.
+- [x] Criar relatório de conversão.
+- [x] Criar relatório de atendimentos por responsável.
+- [x] Criar relatório de tempo de resposta quando houver mensagens.
+- [x] Criar exportação simples quando fizer sentido.
 
-### ConfiguraÃ§Ãµes operacionais em `/crm/configuracoes`
+### Configurações operacionais em `/crm/configuracoes`
 
-- [x] Criar aba de respostas rÃ¡pidas internas.
-- [x] Criar aba de horÃ¡rios de atendimento.
-- [x] Criar aba de Ã¡reas jurÃ­dicas gerenciÃ¡veis pelo CRM.
+- [x] Criar aba de respostas rápidas internas.
+- [x] Criar aba de horários de atendimento.
+- [x] Criar aba de áreas jurídicas gerenciáveis pelo CRM.
 - [x] Criar tabela `legal_areas` com RLS no Supabase.
-- [x] Carregar Ã¡reas jurÃ­dicas configuradas no formulÃ¡rio pÃºblico.
-- [x] Carregar Ã¡reas jurÃ­dicas configuradas no cadastro e ediÃ§Ã£o de leads.
-- [x] Carregar Ã¡reas jurÃ­dicas configuradas na ediÃ§Ã£o de clientes.
-- [x] Revisar permissÃµes de administrador, gestor e atendente.
+- [x] Carregar áreas jurídicas configuradas no formulário público.
+- [x] Carregar áreas jurídicas configuradas no cadastro e edição de leads.
+- [x] Carregar áreas jurídicas configuradas na edição de clientes.
+- [x] Revisar permissões de administrador, gestor e atendente.
 
-### RevisÃµes gerais do CRM
+### Revisões gerais do CRM
 
 - [ ] Revisar estados vazios das telas operacionais.
 - [ ] Revisar mensagens de erro das telas operacionais.
 
-## Site pÃºblico - Captura de agendamento e WhatsApp do site
+## Site público - Captura de agendamento e WhatsApp do site
 
 Status: feito.
 
-Objetivo: manter o formulÃ¡rio principal como solicitaÃ§Ã£o de agendamento e transformar os botÃµes de WhatsApp do site em captura rÃ¡pida, criando lead antes de abrir o WhatsApp e separando a origem `site` da origem `site_whatsapp`.
+Objetivo: manter o formulário principal como solicitação de agendamento e transformar os botões de WhatsApp do site em captura rápida, criando lead antes de abrir o WhatsApp e separando a origem `site` da origem `site_whatsapp`.
 
-- [x] Criar endpoint server-side para captura pÃºblica de agendamento.
-- [x] Validar dados do formulÃ¡rio no servidor antes de gravar no Supabase.
+- [x] Criar endpoint server-side para captura pública de agendamento.
+- [x] Validar dados do formulário no servidor antes de gravar no Supabase.
 - [x] Criar ou reaproveitar `contacts` por telefone.
 - [x] Criar ou atualizar lead aberto vinculado ao contato.
-- [x] Salvar origem `site` para formulÃ¡rio principal.
+- [x] Salvar origem `site` para formulário principal.
 - [x] Salvar origem `site_whatsapp` para cliques nos CTAs de WhatsApp do site.
-- [x] Registrar preferÃªncia de retorno: WhatsApp, e-mail ou ligaÃ§Ã£o.
-- [x] Registrar melhor horÃ¡rio para contato em `best_contact_time`.
-- [x] Registrar Ã¡rea/setor jurÃ­dico no lead.
-- [x] Usar captura rÃ¡pida no WhatsApp do site com nome, telefone e mensagem.
-- [x] Abrir WhatsApp somente apÃ³s o lead do site ser salvo.
-- [x] Atualizar textos pÃºblicos de contato para linguagem de agendamento.
-- [x] Manter identidade visual, cores e layout geral do site pÃºblico.
-- [x] Adicionar Google Cloud reCAPTCHA score-based no formulÃ¡rio de agendamento.
-- [x] Adicionar Google Cloud reCAPTCHA score-based na captura rÃ¡pida do WhatsApp do site.
+- [x] Registrar preferência de retorno: WhatsApp, e-mail ou ligação.
+- [x] Registrar melhor horário para contato em `best_contact_time`.
+- [x] Registrar área/setor jurídico no lead.
+- [x] Usar captura rápida no WhatsApp do site com nome, telefone e mensagem.
+- [x] Abrir WhatsApp somente após o lead do site ser salvo.
+- [x] Atualizar textos públicos de contato para linguagem de agendamento.
+- [x] Manter identidade visual, cores e layout geral do site público.
+- [x] Adicionar Google Cloud reCAPTCHA score-based no formulário de agendamento.
+- [x] Adicionar Google Cloud reCAPTCHA score-based na captura rápida do WhatsApp do site.
 - [x] Validar token e score do reCAPTCHA no endpoint server-side antes de criar lead.
-- [x] Rodar `npm run typecheck`.
-- [x] Rodar `npm run lint`.
-- [x] Rodar `npm run build`.
+- [x] Rodar `npm.cmd run typecheck`.
+- [x] Rodar `npm.cmd run lint`.
+- [x] Rodar `npm.cmd run build`.
 
-## Fase 12 - Etapa 12 de 12 - WhatsApp e InteligÃªncia Artificial
+## Fase 12 - Etapa 12 de 12 - WhatsApp e Inteligência Artificial
 
-Objetivo: integrar canais externos somente depois que CRM, banco, permissÃµes e atendimento interno estiverem prontos.
+Objetivo: integrar canais externos somente depois que CRM, banco, permissões e atendimento interno estiverem prontos.
 
 ### WhatsApp - Evolution API
 
-Objetivo: conectar o WhatsApp ao CRM por QR Code, permitir gerenciamento simples da conexÃ£o e usar a Evolution API somente pelo servidor.
+Objetivo: conectar o WhatsApp ao CRM por QR Code, permitir gerenciamento simples da conexão e usar a Evolution API somente pelo servidor.
 
-ReferÃªncias da documentaÃ§Ã£o lidas:
+Referências da documentação lidas:
 
 - Create Instance: https://doc.evolution-api.com/v2/api-reference/instance-controller/create-instance-basic
 - Instance Connect: https://doc.evolution-api.com/v2/api-reference/instance-controller/instance-connect
@@ -334,97 +334,97 @@ ReferÃªncias da documentaÃ§Ã£o lidas:
 - Logout Instance: https://doc.evolution-api.com/v2/api-reference/instance-controller/logout-instance
 - Delete Instance: https://doc.evolution-api.com/v2/api-reference/instance-controller/delete-instance
 
-### WhatsApp - Etapa 1 de 8 - PreparaÃ§Ã£o segura da integraÃ§Ã£o
+### WhatsApp - Etapa 1 de 8 - Preparação segura da integração
 
-- [x] Ler documentaÃ§Ã£o oficial da Evolution API v2.
+- [x] Ler documentação oficial da Evolution API v2.
 - [x] Confirmar Evolution API local rodando no Docker em `localhost:8080`.
-- [x] Confirmar que a Evolution API responde localmente sem depender de conexÃ£o antiga.
-- [x] Configurar variÃ¡veis privadas server-only da Evolution API em `.env.local`.
+- [x] Confirmar que a Evolution API responde localmente sem depender de conexão antiga.
+- [x] Configurar variáveis privadas server-only da Evolution API em `.env.local`.
 - [x] Garantir que nenhuma chave da Evolution API use prefixo `NEXT_PUBLIC_`.
 - [x] Criar cliente server-side da Evolution API em `src/server/integrations/evolution`.
-- [x] Padronizar respostas internas da integraÃ§Ã£o sem expor termos tÃ©cnicos ao usuÃ¡rio do CRM.
-- [x] Criar validaÃ§Ã£o de erro para API offline, chave invÃ¡lida e instÃ¢ncia inexistente.
+- [x] Padronizar respostas internas da integração sem expor termos técnicos ao usuário do CRM.
+- [x] Criar validação de erro para API offline, chave inválida e instância inexistente.
 
-### WhatsApp - Etapa 2 de 8 - Banco e estado da conexÃ£o
+### WhatsApp - Etapa 2 de 8 - Banco e estado da conexão
 
-- [x] Criar tabela de configuraÃ§Ã£o da conexÃ£o do WhatsApp no Supabase.
-- [x] Salvar nome da instÃ¢ncia, status, nÃºmero conectado, nome do perfil, foto do perfil e datas de atualizaÃ§Ã£o.
-- [x] Salvar se a conexÃ£o estÃ¡ ativa ou desativada dentro do CRM.
-- [x] Criar tabela de eventos de conexÃ£o para histÃ³rico operacional.
+- [x] Criar tabela de configuração da conexão do WhatsApp no Supabase.
+- [x] Salvar nome da instância, status, número conectado, nome do perfil, foto do perfil e datas de atualização.
+- [x] Salvar se a conexão está ativa ou desativada dentro do CRM.
+- [x] Criar tabela de eventos de conexão para histórico operacional.
 - [x] Ativar RLS nas tabelas novas.
 - [x] Permitir leitura para administrador, gestor e atendente.
-- [x] Permitir gerenciamento da conexÃ£o somente para administrador e gestor.
-- [x] Rodar advisors de seguranÃ§a e performance do Supabase apÃ³s a alteraÃ§Ã£o.
+- [x] Permitir gerenciamento da conexão somente para administrador e gestor.
+- [x] Rodar advisors de segurança e performance do Supabase após a alteração.
 
 ### WhatsApp - Etapa 3 de 8 - Nova aba no menu do CRM
 
 - [x] Criar item `WhatsApp` no menu lateral do CRM.
-- [x] Criar pÃ¡gina `/crm/whatsapp`.
-- [x] Exibir estado atual da conexÃ£o com linguagem simples: conectado, aguardando leitura, desconectado, desativado ou indisponÃ­vel.
-- [x] Exibir nÃºmero e nome do WhatsApp conectado quando houver conexÃ£o.
-- [x] Exibir aÃ§Ãµes principais em botÃµes claros: conectar, atualizar, desativar, reativar, desconectar e excluir.
-- [x] NÃ£o exibir termos tÃ©cnicos como instÃ¢ncia, webhook, payload, token, API key, erro 401 ou QR raw para o usuÃ¡rio final.
-- [x] Criar estados vazios e mensagens de erro em portuguÃªs do Brasil com acentuaÃ§Ã£o correta.
+- [x] Criar página `/crm/whatsapp`.
+- [x] Exibir estado atual da conexão com linguagem simples: conectado, aguardando leitura, desconectado, desativado ou indisponível.
+- [x] Exibir número e nome do WhatsApp conectado quando houver conexão.
+- [x] Exibir ações principais em botões claros: conectar, atualizar, desativar, reativar, desconectar e excluir.
+- [x] Não exibir termos técnicos como instância, webhook, payload, token, API key, erro 401 ou QR raw para o usuário final.
+- [x] Criar estados vazios e mensagens de erro em português do Brasil com acentuação correta.
 - [x] Garantir layout responsivo em desktop, tablet e mobile.
 
-### WhatsApp - Etapa 4 de 8 - ConexÃ£o por QR Code
+### WhatsApp - Etapa 4 de 8 - Conexão por QR Code
 
-- [x] Criar aÃ§Ã£o server-side para criar ou reaproveitar a conexÃ£o da Evolution API.
-- [x] Criar aÃ§Ã£o server-side para solicitar QR Code em `/instance/connect/{instance}`.
-- [x] Renderizar o QR Code no CRM de forma visual e legÃ­vel.
-- [x] Exibir instruÃ§Ã£o simples para leitura pelo WhatsApp do celular.
-- [x] Atualizar o QR Code quando a Evolution API enviar novo cÃ³digo.
+- [x] Criar ação server-side para criar ou reaproveitar a conexão da Evolution API.
+- [x] Criar ação server-side para solicitar QR Code em `/instance/connect/{instance}`.
+- [x] Renderizar o QR Code no CRM de forma visual e legível.
+- [x] Exibir instrução simples para leitura pelo WhatsApp do celular.
+- [x] Atualizar o QR Code quando a Evolution API enviar novo código.
 - [x] Consultar periodicamente `/instance/connectionState/{instance}` enquanto a leitura estiver pendente.
-- [x] Atualizar a pÃ¡gina automaticamente quando o estado mudar para conectado.
-- [x] Salvar o estado conectado no Supabase assim que a conexÃ£o for confirmada.
+- [x] Atualizar a página automaticamente quando o estado mudar para conectado.
+- [x] Salvar o estado conectado no Supabase assim que a conexão for confirmada.
 
 ### WhatsApp - Etapa 5 de 8 - Desativar, desconectar e excluir
 
-- [x] Criar aÃ§Ã£o para desativar o uso do WhatsApp no CRM sem apagar histÃ³rico.
-- [x] Criar aÃ§Ã£o para reativar uma conexÃ£o desativada.
-- [x] Criar aÃ§Ã£o para desconectar o WhatsApp usando `/instance/logout/{instance}`.
-- [x] Criar aÃ§Ã£o para excluir a conexÃ£o usando `/instance/delete/{instance}`.
-- [x] Pedir confirmaÃ§Ã£o antes de desconectar ou excluir.
-- [x] Explicar no CRM a diferenÃ§a entre desativar, desconectar e excluir com texto simples.
-- [x] Ao excluir, manter mensagens e histÃ³rico comercial jÃ¡ salvos no CRM.
-- [x] Registrar cada alteraÃ§Ã£o no histÃ³rico operacional.
+- [x] Criar ação para desativar o uso do WhatsApp no CRM sem apagar histórico.
+- [x] Criar ação para reativar uma conexão desativada.
+- [x] Criar ação para desconectar o WhatsApp usando `/instance/logout/{instance}`.
+- [x] Criar ação para excluir a conexão usando `/instance/delete/{instance}`.
+- [x] Pedir confirmação antes de desconectar ou excluir.
+- [x] Explicar no CRM a diferença entre desativar, desconectar e excluir com texto simples.
+- [x] Ao excluir, manter mensagens e histórico comercial já salvos no CRM.
+- [x] Registrar cada alteração no histórico operacional.
 
 ### WhatsApp - Etapa 6 de 8 - Webhook de recebimento
 
 - [x] Criar rota server-side para receber eventos da Evolution API.
 - [x] Validar segredo privado do webhook antes de processar qualquer evento.
-- [x] Configurar webhook da instÃ¢ncia com eventos `QRCODE_UPDATED`, `CONNECTION_UPDATE`, `MESSAGES_UPSERT`, `MESSAGES_UPDATE` e `SEND_MESSAGE`.
-- [x] Salvar evento de QR Code quando houver atualizaÃ§Ã£o.
-- [x] Salvar evento de conexÃ£o quando o WhatsApp conectar, desconectar ou falhar.
-- [x] Persistir toda mensagem recebida antes de qualquer automaÃ§Ã£o.
-- [x] Ignorar grupos nesta fase, salvo se o usuÃ¡rio pedir o contrÃ¡rio.
-- [x] NÃ£o registrar chaves, segredos ou payloads sensÃ­veis em logs.
+- [x] Configurar webhook da instância com eventos `QRCODE_UPDATED`, `CONNECTION_UPDATE`, `MESSAGES_UPSERT`, `MESSAGES_UPDATE` e `SEND_MESSAGE`.
+- [x] Salvar evento de QR Code quando houver atualização.
+- [x] Salvar evento de conexão quando o WhatsApp conectar, desconectar ou falhar.
+- [x] Persistir toda mensagem recebida antes de qualquer automação.
+- [x] Ignorar grupos nesta fase, salvo se o usuário pedir o contrário.
+- [x] Não registrar chaves, segredos ou payloads sensíveis em logs.
 
 ### WhatsApp - Etapa 7 de 8 - Conversas, contatos e leads
 
 - [x] Vincular mensagem recebida a contato pelo telefone.
-- [x] Criar contato automaticamente quando o telefone ainda nÃ£o existir.
+- [x] Criar contato automaticamente quando o telefone ainda não existir.
 - [x] Vincular contato ao lead quando houver lead existente.
-- [x] Criar lead automaticamente com origem `whatsapp` quando nÃ£o houver lead.
+- [x] Criar lead automaticamente com origem `whatsapp` quando não houver lead.
 - [x] Criar ou atualizar conversa vinculada ao contato e ao lead.
 - [x] Salvar mensagem recebida em `messages` como entrada.
-- [x] Salvar Ã¡udio recebido em Storage privado para reproduÃ§Ã£o no CRM.
-- [x] Exibir player de Ã¡udio na conversa quando a mensagem recebida for Ã¡udio.
-- [x] Salvar imagem recebida em Storage privado para visualizaÃ§Ã£o no CRM.
+- [x] Salvar áudio recebido em Storage privado para reprodução no CRM.
+- [x] Exibir player de áudio na conversa quando a mensagem recebida for áudio.
+- [x] Salvar imagem recebida em Storage privado para visualização no CRM.
 - [x] Exibir preview de imagem na conversa quando a mensagem recebida for imagem.
-- [x] Atualizar Ãºltimo horÃ¡rio da conversa.
-- [x] Registrar evento relevante no histÃ³rico do lead.
+- [x] Atualizar último horário da conversa.
+- [x] Registrar evento relevante no histórico do lead.
 
 ### WhatsApp - Etapa 8 de 8 - Envio humano pelo CRM
 
 - [x] Alterar resposta da tela de conversas para enviar mensagem real quando WhatsApp estiver conectado.
 - [x] Usar `/message/sendText/{instance}` somente pelo servidor.
-- [x] Manter fallback para salvar resposta no histÃ³rico quando WhatsApp estiver desativado ou indisponÃ­vel.
-- [x] Salvar mensagem enviada no banco apÃ³s confirmaÃ§Ã£o de envio.
-- [x] Exibir erro simples quando a mensagem nÃ£o puder ser enviada.
-- [ ] Testar conexÃ£o por QR Code.
-- [x] Permitir envio de imagem pelo CRM com visualizaÃƒÂ§ÃƒÂ£o no histÃƒÂ³rico.
-- [x] Permitir gravaÃƒÂ§ÃƒÂ£o e envio de ÃƒÂ¡udio pelo CRM com player no histÃƒÂ³rico.
+- [x] Manter fallback para salvar resposta no histórico quando WhatsApp estiver desativado ou indisponível.
+- [x] Salvar mensagem enviada no banco após confirmação de envio.
+- [x] Exibir erro simples quando a mensagem não puder ser enviada.
+- [ ] Testar conexão por QR Code.
+- [x] Permitir envio de imagem pelo CRM com visualização no histórico.
+- [x] Permitir gravação e envio de áudio pelo CRM com player no histórico.
 - [x] Permitir inserir emojis Unicode compatíveis com WhatsApp no campo de resposta.
 - [x] Exibir status visual no balão da mensagem: enviando, enviada, falhou e tentar novamente.
 
@@ -468,9 +468,9 @@ Tasks:
 - [x] Revalidar rotas afetadas após alteração: conversas, leads, pipeline, clientes e dashboard.
 - [x] Garantir que alterar a etapa não feche o chat aberto.
 - [ ] Validar visualmente o chat em desktop e mobile.
-- [x] Rodar `npm run typecheck`.
-- [x] Rodar `npm run lint`.
-- [x] Rodar `npm run build`.
+- [x] Rodar `npm.cmd run typecheck`.
+- [x] Rodar `npm.cmd run lint`.
+- [x] Rodar `npm.cmd run build`.
 
 - [ ] Testar recebimento de mensagem.
 - [ ] Testar envio de mensagem.
@@ -549,40 +549,59 @@ Etapa 4 - Validação final
 - [ ] Testar listagem de leads com lead aberto, perdido e convertido.
 - [ ] Testar acesso direto a lead convertido.
 - [ ] Testar abertura da conversa a partir de lead ainda não convertido.
-- [x] Rodar `npm run typecheck`.
-- [x] Rodar `npm run lint`.
-- [x] Rodar `npm run build`.
+- [x] Rodar `npm.cmd run typecheck`.
+- [x] Rodar `npm.cmd run lint`.
+- [x] Rodar `npm.cmd run build`.
 
 ### IA - AI Studio/Gemini
 
-- [ ] Criar prompt base da assistente inicial.
-- [ ] Criar rota server-side para chamada da IA.
-- [ ] Impedir chamada da IA diretamente pelo browser.
-- [ ] Coletar nome.
-- [ ] Coletar telefone/WhatsApp.
-- [ ] Coletar cidade.
-- [ ] Coletar area juridica.
-- [ ] Coletar descricao breve.
-- [ ] Coletar urgencia.
-- [ ] Coletar melhor horario de contato.
-- [ ] Gerar resumo do atendimento.
-- [ ] Classificar area juridica.
-- [ ] Classificar prioridade.
-- [ ] Classificar potencial de conversao.
-- [ ] Encaminhar para humano.
-- [ ] Salvar sessao de IA.
-- [ ] Salvar mensagens da IA.
-- [ ] Salvar classificacao no lead.
-- [ ] Garantir que a IA nao prometa resultado juridico.
-- [ ] Garantir que a IA nao finja ser advogado.
+Atualização posterior: a etapa de IA deixou de ser pendência deste histórico e passou a ser acompanhada no `TODO.md` da raiz e em `docs/TODO-ia-e-whatsapp-concluido-2026-05-14.md`.
+
+- [x] Criar prompt base da assistente inicial.
+- [x] Criar rota server-side para chamada da IA.
+- [x] Impedir chamada da IA diretamente pelo browser.
+- [x] Coletar nome, telefone/WhatsApp, cidade, área jurídica, descrição breve, urgência e melhor horário de contato quando disponíveis.
+- [x] Gerar resumo do atendimento.
+- [x] Classificar área jurídica, prioridade e potencial de conversão.
+- [x] Encaminhar para humano quando necessário.
+- [x] Salvar sessão de IA.
+- [x] Salvar mensagens da IA.
+- [x] Salvar classificação no lead/conversa.
+- [x] Garantir que a IA não prometa resultado jurídico.
+- [x] Garantir que a IA não finja ser advogada.
+- [x] Permitir que humano assuma ou pause a IA por conversa.
+- [x] Exibir resumo/classificação da IA por botão no atendimento.
+- [ ] Testar pergunta jurídica complexa.
+- [ ] Testar tentativa de promessa de resultado.
+- [ ] Testar falha do Gemini.
+- [ ] Testar falha da Evolution.
 
 ## Validacao Obrigatoria por Entrega
 
-- [x] Rodar `npm run typecheck`.
-- [x] Rodar `npm run lint`.
-- [x] Rodar `npm run build`.
+- [x] Rodar `npm.cmd run typecheck`.
+- [x] Rodar `npm.cmd run lint`.
+- [x] Rodar `npm.cmd run build`.
 - [x] Validar visualmente telas alteradas.
 - [x] Validar rotas protegidas quando houver auth.
 - [x] Validar policies/RLS quando houver alteracao de banco.
-- [x] Validar que chaves privadas nao foram expostas no frontend.
-- [x] Atualizar este TODO marcando tarefas concluidas.
+- [x] Validar que chaves privadas não foram expostas no frontend.
+- [x] Atualizar este TODO marcando tarefas concluídas.
+
+## Atualização posterior - Perfil do Usuário e Navegação do CRM
+
+Registrado em 14/05/2026:
+
+- [x] Criar menu lateral recolhível no CRM.
+- [x] Colocar botão de recolher/expandir dentro do menu, acima do Dashboard.
+- [x] Criar menu de perfil do usuário no topo, ao lado da troca de tema.
+- [x] Criar página `/crm/perfil`.
+- [x] Permitir edição de dados básicos do perfil.
+- [x] Permitir upload de foto do perfil.
+- [x] Criar bucket `profile-avatars` no Supabase Storage.
+- [x] Criar coluna `profiles.avatar_storage_path`.
+- [x] Validar tamanho e tipo de imagem do avatar.
+- [x] Corrigir aviso do React sobre `encType` manual em formulário com Server Action.
+- [x] Rodar `npm.cmd run typecheck`.
+- [x] Rodar `npm.cmd run lint`.
+- [x] Rodar `npm.cmd run build`.
+- [x] Enviar commit `9935316 Add CRM user profile management` ao GitHub.

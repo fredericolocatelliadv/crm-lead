@@ -1,468 +1,237 @@
-# Análise do sistema real
+# Análise do Sistema Real
 
-Data da análise: 14/05/2026  
-Projeto Supabase auditado: `crm_lead` (`ykkvwhsjqimcwraryaxw`)  
+Data da análise: 14/05/2026
+
+Projeto Supabase auditado: `crm_lead` (`ykkvwhsjqimcwraryaxw`)
+
 Pasta do projeto: `C:\app\frederico-locatelli-site`
 
-## Sumário
+Repositório remoto: `https://github.com/fredericolocatelliadv/crm-lead.git`
 
-1. [Resumo executivo](#resumo-executivo)
-2. [Escopo lido](#escopo-lido)
-3. [Estado real do banco](#estado-real-do-banco)
-4. [Modelo lógico atual](#modelo-lógico-atual)
-5. [Jornada simulada do cliente](#jornada-simulada-do-cliente)
-6. [O que já está feito](#o-que-já-está-feito)
-7. [Pontos pendentes](#pontos-pendentes)
-8. [Segurança](#segurança)
-9. [Riscos e correções recomendadas](#riscos-e-correções-recomendadas)
-10. [Notas para a próxima IA ou próximo desenvolvedor](#notas-para-a-próxima-ia-ou-próximo-desenvolvedor)
-11. [Validação executada nesta análise](#validação-executada-nesta-análise)
+## Resumo Executivo
 
-## Resumo executivo
+O sistema está em fase de desenvolvimento, mas já possui uma base comercial funcional: site público, blog, captação de leads, CRM, WhatsApp via Evolution API, IA com Gemini, SEO/marketing, documentos legais, consentimento de cookies e perfil do usuário.
 
-O sistema já tem uma base comercial funcional: site público, blog preparado, CRM protegido, usuários/perfis, leads, pipeline, conversas, clientes convertidos, relatórios, configurações, WhatsApp via Evolution API e armazenamento de mídia. O banco real confirma que o módulo central está em pé: todas as tabelas públicas estão com RLS ativo, há um cliente convertido, uma conversa vinculada, mensagens preservadas, anexos privados e histórico comercial.
+A etapa mais recente entregue foi a área de perfil no CRM, com upload de foto para Supabase Storage, menu de perfil no topo e menu lateral recolhível. O código foi validado com typecheck, lint e build antes do envio ao GitHub.
 
-A regra mais importante que vinha gerando confusão foi corrigida no estado atual: lead convertido continua no banco como histórico, mas não deve aparecer como lead operacional nem ocupar pipeline. O cliente é a entidade principal depois da conversão. A checagem real do banco também está limpa para os erros recentes: não há lead aberto duplicado por contato, não há conversa duplicada por contato/canal, não há lead convertido sem cliente, e notas internas de chat de cliente convertido já estão vinculadas ao cliente.
+O fluxo WhatsApp + IA também foi testado em cenário real de desenvolvimento: QR Code conectou, mensagens foram recebidas no CRM, respostas foram enviadas, a IA respondeu automaticamente e o controle humano por `Assumir`/`Pausar IA` interrompeu a automação sem bloquear novas mensagens.
 
-Os pontos que ainda precisam de atenção são objetivos: captura pública de lead ainda escreve direto do browser no Supabase, a permissão `anon` recebeu grants amplos demais e depende de RLS para conter acesso, a proteção de senha vazada do Supabase Auth está desligada, a IA/Gemini já responde pelo WhatsApp e registra classificação no CRM, mas ainda precisa de testes de endurecimento, e o dashboard ainda precisa separar melhor oportunidade operacional de cliente convertido.
+## Escopo do Produto Atual
 
-Atualização de 14/05/2026: a etapa de IA já possui integração real com Gemini 2.5 Flash, resposta automática pelo WhatsApp, persistência em `ai_sessions`, `ai_messages` e `ai_classifications`, selo de mensagem automática no chat, resumo/classificação acessível por botão no atendimento e controle humano por conversa. O botão `Assumir` foi validado no banco: depois de assumido, novas mensagens do WhatsApp continuaram sendo salvas e a IA não enviou nova resposta automática.
+O produto é uma plataforma comercial jurídica. Ele existe para captar, atender, qualificar e converter leads.
 
-## Escopo lido
+Áreas existentes:
 
-Documentos lidos:
+- site público institucional;
+- blog/notícias;
+- formulários públicos;
+- captura rápida antes de abrir WhatsApp do site;
+- CRM com dashboard, leads, pipeline, conversas, WhatsApp, clientes, blog, relatórios, usuários e configurações;
+- assistente IA configurável;
+- perfil do usuário;
+- SEO, marketing e privacidade configuráveis pelo painel.
 
-- `AGENTS.md`
-- `TODO.md`
-- `docs/PRD.md`
-- `package.json`
-- `.env.example`
+Fora do escopo:
 
-Código lido por domínio:
+- ERP jurídico;
+- processos judiciais;
+- andamentos processuais;
+- petições;
+- prazos jurídicos internos;
+- financeiro completo.
 
-- Autenticação e autorização: `src/proxy.ts`, `src/server/supabase/*`, `src/server/auth/*`, `src/features/users/*`
-- Site público e captura: `src/features/site/components/ContactForm.tsx`
-- Leads: `src/features/leads/actions.ts`, `src/features/leads/data/lead-directory.ts`
-- Pipeline: `src/features/pipeline/actions.ts`, `src/features/pipeline/data/pipeline-board.ts`
-- Conversas: `src/features/conversations/actions.ts`, `src/features/conversations/data/conversation-directory.ts`, componentes principais
-- Clientes: `src/features/customers/actions.ts`, `src/features/customers/data/customer-directory.ts`, páginas de detalhe/edição
-- WhatsApp: `src/server/integrations/evolution/client.ts`, `src/features/whatsapp/server/evolution-webhook.ts`, `src/features/whatsapp/data/connection.ts`
-- Dashboard, relatórios e configurações: `src/features/dashboard/*`, `src/features/reports/*`, `src/features/settings/*`
+## Estado Atual do Banco
 
-Banco lido pelo MCP do Supabase:
+Consulta agregada executada pelo MCP Supabase em 14/05/2026, sem expor dados pessoais nem corpo de mensagens.
 
-- Lista de tabelas, colunas, chaves e RLS
-- Policies de `public` e `storage`
-- Buckets de Storage
-- Funções em `public` e `app_private`
-- Advisors de segurança e performance
-- Consultas agregadas de integridade, sem expor telefone, nome ou corpo de mensagem
-
-Limitação observada: a pasta local não está como repositório Git neste workspace (`git status` retornou que não há `.git`). Então esta análise não consegue separar por diff/versionamento local.
-
-## Estado real do banco
-
-### Tabelas principais
-
-Todas as tabelas públicas listadas pelo Supabase estão com RLS ativo.
-
-| Área | Tabela | Registros |
-|---|---:|---:|
-| Usuários | `profiles` | 1 |
-| Usuários | `user_roles` | 1 |
-| Operação | `departments` | 4 |
-| Comercial | `contacts` | 1 |
-| Comercial | `pipeline_stages` | 7 |
-| Comercial | `leads` | 1 |
-| Comercial | `lead_events` | 37 |
-| Clientes | `customers` | 1 |
-| Atendimento | `conversations` | 1 |
-| Atendimento | `messages` | 31 |
-| Atendimento | `notes` | 3 |
-| Atendimento | `attachments` | 4 |
-| Site/blog | `blog_categories` | 3 |
-| Site/blog | `blog_posts` | 0 |
-| Site/blog | `site_settings` | 1 |
-| Site/blog | `team_members` | 0 |
-| Site/blog | `testimonials` | 0 |
-| Site/blog | `faqs` | 0 |
-| Configurações | `quick_replies` | 1 |
-| Configurações | `business_hours` | 7 |
-| WhatsApp | `whatsapp_instances` | 1 |
-| WhatsApp | `whatsapp_connection_events` | 21 |
-| IA | `ai_sessions` | 0 |
-| IA | `ai_messages` | 0 |
-| IA | `ai_classifications` | 0 |
-
-### Estado comercial atual
-
-| Métrica | Valor |
+| Tabela | Registros |
 |---|---:|
-| Leads totais | 1 |
-| Leads abertos | 0 |
-| Leads convertidos | 1 |
-| Leads perdidos | 0 |
-| Clientes | 1 |
-| Conversas | 1 |
-| Status da conversa atual | `waiting_client` |
-| Mensagens recebidas | 15 |
-| Mensagens enviadas | 13 |
-| Notas internas no chat | 3 |
-| Mensagens de texto | 27 |
-| Áudios | 2 |
-| Imagens | 2 |
-| Mensagens com status `sent` | 31 |
+| `ai_classifications` | 4 |
+| `ai_messages` | 9 |
+| `ai_sessions` | 2 |
+| `attachments` | 0 |
+| `blog_categories` | 3 |
+| `blog_posts` | 0 |
+| `business_hours` | 7 |
+| `contacts` | 1 |
+| `conversations` | 1 |
+| `customers` | 0 |
+| `departments` | 4 |
+| `lead_events` | 18 |
+| `leads` | 1 |
+| `legal_areas` | 2 |
+| `messages` | 12 |
+| `notes` | 0 |
+| `pipeline_stages` | 7 |
+| `profiles` | 1 |
+| `quick_replies` | 0 |
+| `site_settings` | 1 |
+| `user_roles` | 1 |
+| `whatsapp_connection_events` | 71 |
+| `whatsapp_instances` | 1 |
 
-### Etapas do pipeline no banco
+Observação: os dados acima são de desenvolvimento/teste. Eles servem para validar fluxo e estrutura, não para medir operação real de campanha.
 
-| Posição | Slug | Nome | Tipo |
-|---:|---|---|---|
-| 10 | `novo-lead` | Novo lead | operacional |
-| 20 | `atendimento-iniciado` | Atendimento iniciado | operacional |
-| 30 | `aguardando-retorno` | Aguardando retorno | operacional |
-| 40 | `em-analise` | Em análise | operacional |
-| 50 | `proposta-enviada` | Proposta enviada | operacional |
-| 60 | `convertido` | Convertido | ganho |
-| 70 | `perdido` | Perdido | perdido |
+## Storage
 
-No banco, o único lead está na etapa `convertido`. No código operacional, pipeline e listagem de leads filtram convertidos para não confundir o advogado.
+Buckets verificados:
 
-### Integridade checada
+| Bucket | Público | Limite | Uso |
+|---|---:|---:|---|
+| `blog-covers` | Sim | 5 MB | Capas de notícias/blog |
+| `crm-attachments` | Não | 10 MB | Anexos de conversas e atendimento |
+| `profile-avatars` | Sim | 3 MB | Fotos de perfil dos usuários |
+| `site-images` | Sim | 5 MB | Imagens do site público |
 
-| Checagem | Resultado |
-|---|---:|
-| Lead convertido sem cliente | 0 |
-| Cliente sem lead original | 0 |
-| Lead aberto que também tem cliente | 0 |
-| Grupo de leads abertos duplicados por contato | 0 |
-| Grupo de conversas duplicadas por contato/canal | 0 |
-| Nota de chat em lead convertido sem `customer_id` | 0 |
-| Mensagem sem vínculo de lead | 0 |
-| Conversa sem vínculo de lead | 0 |
+O bucket `profile-avatars` possui policies para usuários autenticados selecionarem, enviarem, atualizarem e removerem objetos. O upload de avatar é feito por Server Action, com validação de tamanho e tipo de arquivo.
 
-Conclusão: o banco de teste está coerente com a lógica atual depois das correções de duplicidade e notas.
+## Jornada Técnica Principal
 
-## Modelo lógico atual
+### Site público
 
-### Lead
-
-Lead é contato comercial ainda não ganho. Ele pode nascer por cadastro manual, formulário do site ou mensagem recebida pelo WhatsApp. Enquanto estiver aberto, aparece em `/crm/leads`, no pipeline operacional e pode ser editado pela tela de lead.
-
-O lead perdido continua sendo lead, porque pode reabrir atendimento se o contato voltar. Por isso a liberação de etapa para perdido faz sentido.
-
-### Cliente
-
-Cliente é lead convertido. A conversão cria registro em `customers`, preserva `lead_id`, `contact_id`, histórico, conversa, eventos, notas e anexos. Depois da conversão, a tela principal deve ser `/crm/clientes/[id]`.
-
-O lead convertido não deve disputar atenção em lista de leads nem no pipeline operacional. Ele permanece no banco como origem comercial e auditoria.
-
-### Conversa
-
-Conversa é o atendimento vinculado ao contato e, quando existir, ao lead. A conversa não inventa um status comercial paralelo: ela deriva a identificação de `customers`, `converted_at`, `lost_at` e `pipeline_stage_id`.
-
-No estado atual:
-
-- conversa de cliente mostra identificação de cliente;
-- botão vira `Abrir cliente`;
-- alteração de etapa fica bloqueada para cliente convertido;
-- alteração de etapa fica liberada para lead perdido;
-- nota interna em conversa de cliente convertido grava `customer_id`.
-
-### Pipeline
-
-Pipeline é operacional, não histórico. O quadro carrega só leads sem `converted_at` e sem `lost_at`, e remove qualquer lead que já tenha cliente vinculado. As etapas `Convertido` e `Perdido` existem no banco para regra de negócio, relatórios e histórico, mas não devem poluir o quadro operacional.
+1. Visitante acessa o site.
+2. Site captura origem, página de entrada e parâmetros de campanha quando existirem.
+3. Visitante envia formulário de agendamento ou captura rápida do WhatsApp.
+4. Lead é criado com origem adequada.
+5. Eventos de marketing são disparados somente se permitidos e sem dados pessoais.
+6. Consentimentos são registrados quando aplicável.
 
 ### WhatsApp
 
-Webhook é server-side, valida segredo e usa service role no servidor. A mensagem é persistida antes de qualquer automação. A lógica atual procura primeiro cliente convertido, depois lead aberto, depois lead perdido. Mensagem enviada pela própria empresa (`fromMe`) não cria lead novo. Isso corrige a duplicidade que apareceu quando a empresa mandou mensagem para um cliente já convertido.
-
-## Jornada simulada do cliente
-
-### 1. Visitante chega pelo site
-
-O formulário público (`ContactForm`) insere diretamente em `leads` pelo cliente Supabase de browser, com `source = site` e `priority = medium`.
-
-Resultado esperado:
-
-- lead entra no banco;
-- trigger/função de banco pode preencher etapa padrão;
-- equipe enxerga o lead no CRM se ele não estiver convertido.
-
-Ponto de atenção: esse caminho não cria `contact` junto com o lead e não passa por server action própria. O webhook do WhatsApp consegue corrigir depois pelo telefone, porque busca lead por `contact_id` ou por telefone, mas a captura pública deveria ser mais forte e atômica.
-
-### 2. Contato chega pelo WhatsApp
-
-Webhook recebe evento da Evolution API, normaliza telefone, ignora grupo, cria ou reaproveita contato, resolve lead e cria/reaproveita conversa.
-
-Ordem de resolução atual:
-
-1. cliente convertido do contato;
-2. lead aberto do contato;
-3. lead perdido do contato;
-4. criar novo lead só se a mensagem for recebida do contato e não enviada pela empresa.
-
-Resultado esperado:
-
-- mensagem recebida entra em `messages`;
-- conversa fica como `unanswered`;
-- evento `whatsapp_message_received` entra no histórico do lead;
-- mídia vai para Storage privado e ganha registro em `attachments`.
-
-### 3. Atendimento humano no CRM
-
-Atendente abre `/crm/conversas`, identifica se o contato é cliente, lead aberto, lead perdido ou sem lead, responde pelo WhatsApp quando conectado e salva histórico.
-
-Resultado esperado:
-
-- resposta enviada vira mensagem `outbound`;
-- conversa passa para `waiting_client`;
-- nota interna vira mensagem `internal` e registro em `notes`;
-- se a conversa pertence a cliente convertido, a nota aparece como `Cliente` na página do cliente.
-
-### 4. Movimentação comercial
-
-Lead aberto pode mudar de etapa pela pipeline ou pelo chat. Ao mover para perdido, exige motivo. Ao mover para convertido, cria cliente e registra evento.
-
-Resultado esperado:
-
-- lead aberto aparece em leads e pipeline;
-- lead perdido pode ser reaberto;
-- lead convertido some da operação de leads/pipeline e vira cliente;
-- acesso direto ao lead convertido redireciona para cliente.
-
-### 5. Gestão do cliente convertido
-
-Cliente aparece em `/crm/clientes`, com origem comercial, histórico, conversa, notas e anexos. A edição principal passa a ser `/crm/clientes/[id]/editar`.
-
-Resultado esperado:
-
-- editar cliente atualiza nome, telefone, e-mail e observações;
-- editar área jurídica atualiza o lead original vinculado;
-- contato vinculado também é atualizado;
-- evento `customer_updated` fica registrado.
-
-## O que já está feito
-
-Base técnica:
-
-- Next.js 16 com App Router e TypeScript.
-- Estrutura Feature First.
-- Tailwind CSS e shadcn/ui no CRM.
-- `src/proxy.ts` protegendo rotas `/crm`.
-- Supabase Auth, perfis e roles.
-- Server actions para operações sensíveis do CRM.
-- Service role isolada em `src/server/supabase/admin.ts` com `server-only`.
-
-Produto:
-
-- Site público e blog/notícias preparados.
-- CRM com dashboard, leads, pipeline, conversas, clientes, relatórios, usuários e configurações.
-- Tema claro/escuro no CRM.
-- CRUD básico de conteúdo do site pelo CRM.
-- Relatórios comerciais simples.
-- Clientes convertidos minimalistas, sem virar ERP jurídico.
-
-Regras comerciais já implementadas:
-
-- Lead convertido fica fora da listagem operacional de leads.
-- Lead convertido fica fora do pipeline operacional.
-- Página de lead convertido redireciona para página do cliente.
-- Edição de lead convertido redireciona para edição do cliente.
-- Cliente pode ser editado, inclusive área jurídica vinculada ao lead original.
-- Conversa de cliente mostra `Abrir cliente`.
-- Conversa bloqueia alteração de etapa quando já existe cliente.
-- Lead perdido pode reabrir fluxo.
-- Caixa de atendimento identifica cliente, lead aberto, lead perdido ou sem lead.
-- Notas internas do chat em cliente convertido são notas do cliente.
-- Webhook não cria lead duplicado para mensagem `fromMe`.
-- Webhook reaproveita conversa existente do contato.
-
-WhatsApp:
-
-- Cliente server-side da Evolution API.
-- Página `/crm/whatsapp`.
-- QR Code, conexão, refresh, desconectar, desativar, reativar e excluir.
-- Webhook com segredo privado.
-- Recebimento de texto, imagem e áudio.
-- Envio humano de texto, imagem e áudio pelo CRM.
-- Storage privado para anexos do CRM.
-- Histórico operacional de conexão.
-
-IA/Gemini:
-
-- Página `/crm/ia` com configuração de operação, modelo, comportamento, contexto e teste da assistente.
-- Gemini 2.5 Flash configurado como modelo inicial.
-- Chamada ao Gemini server-side, com validação estruturada da resposta.
-- Webhook do WhatsApp chama a IA somente depois de salvar a mensagem recebida.
-- Respostas automáticas ficam registradas no CRM com selo de IA.
-- Classificação e resumo ficam salvos e podem ser consultados pela equipe.
-- Botão `Resumo da IA` abre modal no atendimento para evitar poluição do chat.
-- Botão `Assumir` pausa a IA naquela conversa e mantém o atendimento humano funcionando.
-
-## Pontos pendentes
-
-Pendências vindas do `TODO.md` e confirmadas na leitura:
-
-- Revisar estados vazios das telas operacionais.
-- Revisar mensagens de erro das telas operacionais.
-- Testar conexão do WhatsApp por QR Code em fluxo real.
-- Validar visualmente chat em desktop e mobile.
-- Testar recebimento de mensagem em cenários adicionais.
-- Testar envio de mensagem em cenários adicionais.
-- Testar desconexão, desativação, reativação e exclusão.
-- Testar falha da Evolution API sem perder mensagem ou histórico.
-- Validar conversão de lead criando cliente e preservando eventos em fluxo completo.
-- Testar listagem de leads com lead aberto, perdido e convertido.
-- Testar acesso direto a lead convertido.
-- Testar abertura da conversa a partir de lead ainda não convertido.
-- Revisar dashboard para separar entradas, oportunidades abertas, perdidos e clientes convertidos.
-- Garantir que o pipeline do dashboard conte somente oportunidades operacionais quando fizer sentido.
-- Revisar textos de estados vazios apontando clientes convertidos para `/crm/clientes`.
-- Endurecer a camada IA/Gemini: testar casos jurídicos complexos, tentativa de promessa de resultado, falha da Evolution, falha do Gemini, cliente convertido falando novamente e lead perdido voltando.
-
-Ponto adicional encontrado na análise:
-
-- A pasta local `supabase/migrations` já existe e passou a receber migrations limpas para alterações recentes. Manter esse padrão em toda mudança de schema.
-
-## Segurança
-
-### Pontos bons
-
-- Rotas `/crm` protegidas por `src/proxy.ts`.
-- Sessão validada com Supabase no servidor.
-- Permissões não dependem de `user_metadata`; usam `profiles`, `user_roles` e função privada de role.
-- Todas as tabelas públicas listadas estão com RLS ativo.
-- Policies internas usam `app_private.current_user_role()`.
-- A função `app_private.current_user_role` está fora do schema público e usa `security definer`.
-- Views legadas `news`, `settings` e `team` estão com `security_invoker=true`.
-- Evolution API não é chamada pelo frontend.
-- Webhook valida segredo com `timingSafeEqual`.
-- Service role fica em arquivo server-only.
-- Bucket `crm-attachments` é privado.
-- Anexos do CRM têm limite de 10 MB e MIME types restritos.
-- Storage tem policies separando buckets públicos de imagens do site/blog e bucket privado do CRM.
-- Advisors de segurança do Supabase não apontaram RLS ausente em tabelas públicas.
-
-### Alertas reais
-
-1. Supabase Auth com proteção de senha vazada desligada.
-
-Advisor de segurança retornou:
-
-- `auth_leaked_password_protection`
-- Nível: `WARN`
-- Correção: ativar proteção contra senhas vazadas no painel do Supabase Auth.
-
-2. Grants do role `anon` estão amplos demais.
-
-O banco concede vários privilégios ao role `anon` em muitas tabelas, inclusive tabelas sensíveis. A RLS está segurando o acesso, mas a postura correta é menor privilégio: revogar grants desnecessários e conceder explicitamente só o que o site público precisa.
-
-O caso mais sensível é `leads`: existe policy `leads_public_insert` para `anon`, com `with_check` limitando `source` a `site`, `form`, `website` ou `whatsapp`. Isso permite o formulário público funcionar, mas ainda deixa a escrita pública dependente de RLS e validação mínima de banco.
-
-3. Formulário público escreve direto do browser.
-
-`ContactForm.tsx` usa `createBrowserClient` e faz `.from("leads").insert(...)`. Funciona, mas é frágil para abuso, spam, duplicidade e validação. Para dados jurídicos sensíveis, o melhor desenho é uma route handler/server action com Zod, rate limit/captcha, normalização de telefone, deduplicação e criação atômica de `contacts` + `leads`.
-
-4. Migrations locais ainda precisam ser mantidas com disciplina.
-
-O schema real está no Supabase e a pasta local de migrations foi criada nas etapas recentes. O risco agora é disciplina operacional: toda alteração definitiva de schema precisa continuar registrada em migration limpa para permitir auditoria, rollback, review de policies e reprodução em outro ambiente.
-
-5. Dashboard ainda mistura histórico com operação.
-
-O dashboard ainda conta etapas usando todos os leads em `leadStagesQuery`, incluindo convertido/perdido. A pipeline operacional já foi corrigida, mas o dashboard precisa seguir a mesma linguagem para não confundir cliente convertido com oportunidade aberta.
-
-6. Performance advisors têm avisos.
-
-Os advisors de performance apontaram índices ainda não usados e policies permissivas duplicadas em `customers` e `pipeline_stages`. Em ambiente de teste com pouco volume isso é esperado, mas antes de produção convém consolidar policies duplicadas e revisar índices depois de tráfego real.
-
-7. Observabilidade do webhook é mínima.
-
-O webhook retorna erro genérico sem log detalhado. Isso evita vazar payload sensível, mas dificulta diagnóstico. O ideal é registrar erro sanitizado, sem token, sem corpo completo da mensagem e sem dados sensíveis.
-
-## Riscos e correções recomendadas
-
-Prioridade 1:
-
-- Migrar captura pública de lead para endpoint/server action.
-- Revogar grants amplos do `anon` e conceder só o necessário.
-- Manter todo schema Supabase versionado em migrations.
-- Ativar proteção de senha vazada no Supabase Auth.
-
-Prioridade 2:
-
-- Ajustar dashboard para refletir operação: abertos, perdidos, convertidos e clientes sem confundir pipeline.
-- Completar testes reais de WhatsApp: QR, envio, recebimento, queda da Evolution API, desconexão e reativação.
-- Criar testes automatizados para conversão, deduplicação de WhatsApp, nota interna de cliente e redirecionamento de lead convertido.
-
-Prioridade 3:
-
-- Endurecer IA/Gemini server-side com testes de guardrails jurídicos e cenários de falha.
-- Revisar estados vazios e mensagens de erro em todas as telas operacionais.
-- Revisar textos com acentuação no repositório, porque há sinais de mojibake em arquivos lidos no terminal. O browser pode renderizar corretamente dependendo da codificação, mas isso deve ser checado visualmente.
-
-## Notas para a próxima IA ou próximo desenvolvedor
-
-Não trate `lead` e `customer` como duplicatas que devem ser apagadas. A regra correta é:
-
-- lead aberto: operação comercial;
-- lead perdido: histórico reabrível;
-- lead convertido: origem comercial preservada;
-- cliente: entidade principal depois da conversão.
-
-Ao mexer em conversa, pipeline ou WhatsApp, preserve esta ordem:
-
-1. nunca criar lead novo para `fromMe`;
-2. resolver cliente convertido antes de lead aberto;
-3. reaproveitar conversa existente por contato/canal;
-4. registrar mensagem antes de automação;
-5. se a conversa é de cliente convertido, notas internas devem ter `customer_id`;
-6. não permitir alteração de etapa em cliente convertido;
-7. permitir reabertura de lead perdido.
-
-Arquivos mais importantes para manter essa lógica:
-
-- `src/features/whatsapp/server/evolution-webhook.ts`
-- `src/features/conversations/data/conversation-directory.ts`
-- `src/features/conversations/actions.ts`
-- `src/features/pipeline/actions.ts`
-- `src/features/pipeline/data/pipeline-board.ts`
-- `src/features/leads/data/lead-directory.ts`
-- `src/features/customers/data/customer-directory.ts`
-- `src/features/customers/actions.ts`
-
-Antes de qualquer próxima entrega que toque regra comercial, rode:
-
-```bash
-npm run typecheck
-npm run lint
-npm run build
+1. Evolution API recebe ou envia mensagem pelo número conectado.
+2. Webhook server-side processa o evento.
+3. Mensagem recebida é salva antes da IA.
+4. Sistema resolve contato, lead e conversa.
+5. Se não existir lead, cria lead com origem `whatsapp`.
+6. Se a IA estiver ativa para a conversa, Gemini gera resposta segura.
+7. Resposta automática é enviada e registrada no CRM.
+8. Humano pode assumir ou pausar a IA a qualquer momento.
+
+### IA
+
+1. Configuração da assistente é lida do banco.
+2. Modelo atual: Gemini 2.5 Flash.
+3. Prompt combina operação, comportamento, contexto e limites do escritório.
+4. Resposta é validada em estrutura controlada.
+5. Sistema salva mensagem, sessão e classificação.
+6. Chat exibe selo de IA e botão de resumo.
+7. Quando humano assume, a automação para naquela conversa.
+
+### Perfil
+
+1. Usuário abre `/crm/perfil`.
+2. Edita dados básicos.
+3. Opcionalmente envia foto.
+4. Server Action valida arquivo e usuário autenticado.
+5. Foto é salva em `profile-avatars`.
+6. Caminho do objeto fica em `profiles.avatar_storage_path`.
+7. Avatar anterior é removido quando substituído.
+
+## O Que Já Está Feito
+
+### Produto
+
+- Site público preservando identidade visual do escritório.
+- Blog/notícias preparado.
+- CRM operacional.
+- Dashboard comercial.
+- Leads e pipeline.
+- Conversas com contexto comercial.
+- Clientes convertidos com histórico preservado.
+- Relatórios simples.
+- Usuários, permissões e configurações.
+- Área de perfil do usuário.
+
+### WhatsApp
+
+- Integração server-side com Evolution API.
+- Página de conexão no CRM.
+- QR Code funcional em teste.
+- Recebimento e envio de mensagens.
+- Controle de desativar, reativar, desconectar e excluir.
+- Persistência de mensagens antes de automação.
+- Criação automática de lead por WhatsApp.
+- Prevenção de lead duplicado por mensagem enviada pela própria empresa.
+
+### IA
+
+- Página `/crm/ia`.
+- Configurações por abas funcionais.
+- Gemini 2.5 Flash configurado.
+- Teste da assistente pelo painel.
+- Resposta automática no WhatsApp.
+- Persistência em `ai_sessions`, `ai_messages` e `ai_classifications`.
+- Botão `Resumo da IA` em modal.
+- Botões `Assumir` e `Pausar IA` por conversa.
+
+### Marketing, SEO e Privacidade
+
+- Campos de configuração para GTM, GA4, Meta Pixel e verificações de domínio.
+- Rastreamento fora do CRM.
+- Eventos de conversão sem dados pessoais.
+- UTMs e parâmetros de campanha preservados no lead.
+- Sitemap e robots.
+- Metadata e Open Graph.
+- Documentos legais públicos.
+- Banner de cookies com personalização em modal.
+
+## Pontos Pendentes
+
+Prioridade alta antes de produção:
+
+- ativar proteção contra senhas vazadas no Supabase Auth;
+- revisar grants do role `anon`;
+- revisar documentos legais com o escritório;
+- testar GTM/GA4/Meta Pixel com IDs reais de homologação;
+- confirmar payloads de marketing no navegador;
+- testar falhas do Gemini e da Evolution;
+- validar visualmente fluxo de upload de avatar autenticado;
+- revisar rate limit/captcha nos endpoints públicos.
+
+Prioridade média:
+
+- criar testes automatizados para deduplicação de lead/conversa;
+- testar cliente convertido falando novamente;
+- testar lead perdido voltando;
+- testar pergunta jurídica complexa;
+- testar tentativa de promessa de resultado pela IA;
+- avaliar fila/job assíncrono para IA em produção.
+
+## Riscos Técnicos
+
+- Webhook chamar IA durante processamento síncrono pode ficar frágil se o Gemini demorar.
+- Estado local do WhatsApp pode ficar defasado se a Evolution mudar sem webhook.
+- Grants amplos para `anon` dependem demais de RLS.
+- Textos legais precisam revisão humana final.
+- Campanhas reais exigem validação de eventos com ferramentas do Google e Meta.
+
+## Regras Para Próxima Implementação
+
+- Ler `AGENTS.md` antes de alterar o projeto.
+- Usar `TODO.md` como checklist atual.
+- Não transformar o CRM em ERP jurídico.
+- Não chamar Evolution API nem Gemini pelo browser.
+- Salvar mensagem recebida antes de IA.
+- Não criar lead novo para mensagem `fromMe`.
+- Preservar histórico ao converter lead em cliente.
+- Não enviar dados pessoais para Google ou Meta.
+- Criar migration limpa para qualquer mudança de schema.
+- Validar com `npm.cmd run typecheck`, `npm.cmd run lint` e `npm.cmd run build` quando houver alteração de código.
+
+## Validação Recente Registrada
+
+Antes da última publicação no GitHub:
+
+```powershell
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run build
 ```
 
-E, se tocar banco, rode novamente:
+Resultado registrado: os três comandos passaram.
 
-- Supabase security advisors;
-- Supabase performance advisors;
-- checagem de integridade para duplicidade de lead/conversa;
-- teste real do fluxo alterado no CRM.
+Validações Supabase registradas nesta atualização documental:
 
-## Validação executada nesta análise
-
-Comandos locais:
-
-```bash
-npm run typecheck
-npm run lint
-npm run build
-```
-
-Resultado: os três comandos passaram.
-
-Consultas e validações no Supabase:
-
-- `_list_projects`: projeto `crm_lead` localizado e saudável.
-- `_list_tables`: tabelas públicas listadas, todas com RLS ativo.
-- `_get_advisors security`: um alerta de proteção de senha vazada desligada.
-- `_get_advisors performance`: alertas de índices ainda não usados e policies permissivas duplicadas.
-- `_execute_sql`: checagens agregadas de integridade comercial e de relacionamento sem expor dados sensíveis.
-
-Não foi executado teste visual do CRM nesta análise, porque a entrega solicitada foi documental e a área interna depende de sessão autenticada. A próxima validação visual deve focar em `/crm/conversas`, `/crm/clientes`, `/crm/leads` e `/crm/pipeline`.
+- contagem agregada das principais tabelas;
+- buckets de Storage;
+- policies do bucket `profile-avatars`.

@@ -1,235 +1,285 @@
-# PRD - CRM Juridico Comercial
+# PRD - Plataforma Comercial Jurídica
 
-## 1. Resumo
+Atualizado em: 14/05/2026
 
-O projeto e uma plataforma comercial para escritorio de advocacia, formada por site publico, blog/noticias, captacao de leads, chatbot com IA, WhatsApp integrado e CRM operacional.
+## 1. Resumo Executivo
 
-O foco e transformar visitantes e contatos de WhatsApp em leads organizados, atendimentos acompanhaveis e clientes convertidos.
+O projeto é uma plataforma comercial para escritório de advocacia, composta por site público, blog/notícias, captação de leads, CRM, WhatsApp integrado pela Evolution API e primeiro atendimento automatizado com Gemini.
 
-## 2. Objetivo Principal
+O produto não é um ERP jurídico. O foco é transformar visitantes, contatos de WhatsApp e campanhas pagas em leads organizados, atendimentos acompanháveis e clientes convertidos.
 
-O sistema deve ajudar o escritorio a:
+## 2. Objetivos do Produto
 
-- captar mais clientes;
-- automatizar o primeiro atendimento;
-- organizar contatos;
-- centralizar conversas do WhatsApp;
-- acompanhar o andamento comercial do lead;
-- aumentar conversao de contratos;
-- manter blog/noticias como canal de autoridade e captacao.
+- Captar leads pelo site público, WhatsApp do site e WhatsApp conectado ao CRM.
+- Organizar atendimento comercial em uma única caixa de conversas.
+- Automatizar o primeiro contato com IA dentro de limites seguros.
+- Classificar área jurídica, prioridade, potencial e necessidade de humano.
+- Permitir que a equipe assuma, pause a IA, responda e mova o lead no funil.
+- Medir origem comercial, UTMs e eventos de conversão sem expor dados pessoais.
+- Manter SEO, blog, documentos legais e rastreamento de marketing configuráveis pelo painel.
 
 ## 3. Fora do Escopo
 
-O sistema nao deve controlar:
+O sistema não deve controlar:
 
-- processos juridicos detalhados;
-- andamento processual;
-- tribunais;
-- prazos juridicos internos;
-- peticoes avancadas;
-- gestao juridica profunda;
+- processos judiciais;
+- andamentos processuais;
+- prazos jurídicos internos;
+- petições;
 - financeiro completo;
-- ERP juridico.
+- controle de tribunais;
+- gestão jurídica profunda;
+- ERP jurídico.
 
-## 4. Produto
+## 4. Público Usuário
 
-O produto possui duas areas principais:
-
-- Area publica: site, blog/noticias, formulario, WhatsApp e entrada de leads.
-- Area interna: CRM, leads, conversas, pipeline, clientes convertidos, indicadores e configuracoes essenciais.
+- Administrador do escritório: configura operação, usuários, site, marketing, WhatsApp e IA.
+- Gestor: acompanha leads, conversas, pipeline, relatórios e qualidade de atendimento.
+- Atendente: responde contatos, assume conversas, registra notas e movimenta leads.
+- Visitante do site: solicita atendimento, envia dados básicos e aceita ou recusa cookies opcionais.
 
 ## 5. Jornada Principal
 
-1. Visitante entra no site.
-2. Visitante entra em contato pelo formulario, WhatsApp ou chatbot.
-3. IA coleta dados basicos quando aplicavel.
-4. Sistema cria ou atualiza o lead.
-5. Lead entra no pipeline.
-6. Atendente humano assume quando necessario.
-7. Conversa continua pelo WhatsApp dentro do CRM.
-8. Lead e qualificado.
-9. Lead vira cliente ou e marcado como perdido.
-10. Cliente convertido e encaminhado ao sistema juridico interno do escritorio.
+1. Visitante chega pelo site, campanha, busca orgânica ou WhatsApp.
+2. Sistema captura origem, página de entrada, UTMs e parâmetros de campanha quando existirem.
+3. Visitante envia formulário de agendamento ou captura rápida de WhatsApp do site.
+4. Sistema cria lead e registra consentimentos quando aplicável.
+5. Contato também pode chegar direto pelo WhatsApp conectado.
+6. Webhook salva a mensagem recebida antes de qualquer automação.
+7. IA responde quando a conversa permite automação e as diretrizes autorizam.
+8. IA registra resposta, resumo, classificação e alertas para a equipe.
+9. Humano pode assumir ou pausar IA por conversa.
+10. Lead avança no pipeline até conversão, perda ou reabertura.
+11. Lead convertido vira cliente e preserva histórico comercial.
 
-## 6. Site Publico
+## 6. Site Público
 
-O site publico deve ser profissional, rapido, responsivo e focado em conversao.
+O site público deve manter a identidade visual atual do escritório, com foco em autoridade, confiança e conversão.
 
-Requisitos:
+Requisitos implementados ou previstos no produto:
 
 - home institucional;
-- areas de atuacao;
+- áreas de atuação;
 - equipe;
-- depoimentos;
-- FAQ;
-- blog/noticias;
-- formulario de contato;
-- WhatsApp flutuante;
-- SEO tecnico basico;
-- identidade visual consistente.
+- notícias/blog;
+- contato e agendamento;
+- captura rápida antes de abrir WhatsApp;
+- páginas de Política de Privacidade, Termos de Uso e Política de Cookies;
+- banner de cookies com aceitar, recusar e personalizar;
+- SEO técnico com metadata, canonical, Open Graph, sitemap e robots;
+- rastreamento por Google Tag Manager, GA4 e Meta Pixel quando configurados;
+- registro de UTMs e parâmetros como `gclid` e `fbclid`;
+- ausência de scripts de marketing dentro do CRM.
 
-Alteracoes de copy, identidade visual, tema, cores ou layout dependem de pedido explicito.
+## 7. CRM
 
-## 7. Blog/Noticias
+O CRM é operacional e deve apoiar conversão comercial, sem virar sistema jurídico profundo.
 
-O blog/noticias deve apoiar autoridade, SEO e captacao.
+Módulos principais:
 
-Requisitos:
+- Dashboard;
+- Leads;
+- Pipeline;
+- Conversas;
+- WhatsApp;
+- Clientes;
+- Blog;
+- Relatórios;
+- Usuários;
+- Configurações;
+- Assistente IA;
+- Perfil do usuário.
 
-- listar posts publicados;
-- pagina individual;
-- categorias;
-- imagem de capa quando existir;
-- resumo;
-- autor;
-- data de publicacao;
-- gerenciamento pelo CRM.
+Regras de experiência:
 
-## 8. Chatbot com IA
+- interface profissional, calma e objetiva;
+- português brasileiro com acentuação correta;
+- menu lateral recolhível;
+- perfil do usuário acessível no topo, ao lado da troca de tema;
+- ações críticas com confirmação clara para usuários leigos;
+- formulários separados de listas e detalhes;
+- estados vazios escritos para a operação do cliente, sem termos internos de desenvolvimento.
 
-A IA realiza o primeiro atendimento automatico e organiza informacoes.
+## 8. Leads, Pipeline e Clientes
 
-A IA deve:
+Lead é o contato comercial ainda não convertido. Cliente é o lead convertido.
 
-- cumprimentar;
-- coletar dados basicos;
-- identificar area juridica;
-- identificar urgencia;
-- resumir atendimento;
-- classificar prioridade e potencial;
-- encaminhar para humano.
+Regras principais:
 
-A IA nao deve:
+- lead aberto aparece em leads, pipeline e conversas;
+- lead perdido preserva histórico e pode ser reaberto;
+- lead convertido preserva o registro comercial, mas a entidade principal passa a ser o cliente;
+- pipeline deve representar oportunidade operacional, não histórico morto;
+- conversa não cria status comercial paralelo;
+- notas, mensagens e eventos preservam o histórico do atendimento.
 
-- prometer resultado;
-- dar garantia juridica;
-- fingir ser advogado;
-- substituir analise humana.
-
-## 9. Dados Coletados
-
-- nome;
-- telefone/WhatsApp;
-- cidade;
-- area juridica;
-- descricao breve;
-- urgencia;
-- melhor horario de contato;
-- origem do lead;
-- resumo do atendimento;
-- prioridade;
-- potencial de conversao.
-
-## 10. CRM
-
-O CRM deve ser simples e focado em conversao de leads.
-
-Modulos:
-
-- dashboard;
-- leads;
-- pipeline;
-- conversas;
-- clientes convertidos;
-- blog/noticias;
-- usuarios e permissoes;
-- configuracoes essenciais.
-
-## 11. Pipeline
-
-Etapas iniciais:
+Etapas comerciais iniciais:
 
 - Novo lead;
 - Atendimento iniciado;
 - Aguardando retorno;
-- Em analise;
+- Em análise;
 - Proposta enviada;
 - Convertido;
 - Perdido.
 
-## 12. WhatsApp
+## 9. WhatsApp
 
-Integracao prevista: Evolution API.
+Integração utilizada: Evolution API, sempre pelo servidor.
 
 Requisitos:
 
-- receber mensagens;
-- enviar mensagens;
-- persistir historico;
-- vincular conversa ao lead;
-- criar lead automaticamente quando necessario;
-- permitir resposta humana pelo CRM;
-- registrar status e responsavel quando disponivel.
+- conexão por QR Code;
+- controle de conexão no CRM;
+- ações de conectar, atualizar, desativar, reativar, desconectar e excluir;
+- mensagens recebidas persistidas antes de IA ou automação;
+- criação automática de contato e lead quando o telefone ainda não existir;
+- reaproveitamento de conversa por contato e canal;
+- envio humano de mensagens pelo CRM;
+- recebimento e envio de texto, imagem e áudio;
+- anexos em bucket privado;
+- linguagem simples na tela, sem termos técnicos para o cliente final.
 
-## 13. Usuarios e Permissoes
+## 10. Assistente IA
 
-Perfis iniciais:
+Fornecedor atual: Google AI Studio/Gemini. Modelo operacional atual: Gemini 2.5 Flash.
 
-- Administrador;
-- Gestor;
-- Atendente.
+A IA é uma assistente inicial do atendimento. Ela pode:
 
-Regras:
+- cumprimentar;
+- coletar nome, telefone, cidade, área jurídica, resumo do caso, urgência e melhor horário;
+- responder de forma curta e segura;
+- classificar área provável, prioridade e potencial;
+- resumir o contato para a equipe;
+- indicar quando precisa de humano;
+- registrar mensagens automáticas com identificação no chat.
 
-- autenticacao via Supabase Auth;
-- autorizacao por perfil;
-- validacao server-side para operacoes sensiveis;
-- RLS nas tabelas expostas.
+A IA não pode:
 
-## 14. Arquitetura
+- prometer resultado;
+- garantir êxito;
+- fingir ser advogada;
+- substituir análise jurídica humana;
+- dar decisão jurídica complexa como orientação final.
+
+Controles necessários:
+
+- configuração de operação, modelo, comportamento, contexto, diretrizes e teste pelo CRM;
+- botão para humano assumir atendimento;
+- botão para pausar IA por conversa;
+- modal de resumo/classificação da IA no chat;
+- persistência em `ai_sessions`, `ai_messages` e `ai_classifications`;
+- fallback seguro quando Gemini ou Evolution falhar.
+
+## 11. SEO, Marketing e Privacidade
+
+O produto deve permitir que a equipe configure marketing sem editar código.
+
+Requisitos:
+
+- campos controlados para Google Tag Manager, GA4, Meta Pixel, Google Search Console e verificação da Meta;
+- opção para ativar ou pausar rastreamento;
+- eventos de conversão sem dados pessoais;
+- registro de origem e campanha no lead;
+- banner de cookies com preferências;
+- documentos legais editáveis;
+- consentimento de privacidade e comunicação registrado no lead quando aplicável.
+
+Regra de segurança: não permitir JavaScript livre inserido pelo usuário.
+
+## 12. Perfil do Usuário
+
+O CRM possui área de perfil em `/crm/perfil`.
+
+Requisitos:
+
+- atualizar nome, telefone, cargo e departamento;
+- exibir dados básicos do usuário autenticado;
+- permitir upload de foto de perfil;
+- salvar avatar no Supabase Storage no bucket `profile-avatars`;
+- preservar autorização server-side;
+- não expor service role no browser.
+
+## 13. Arquitetura Real
 
 - Next.js 16 com App Router.
 - TypeScript.
 - Tailwind CSS.
-- Feature First.
-- Supabase como banco, auth, storage e realtime.
-- Route handlers/server actions para integracoes sensiveis.
+- shadcn/ui no CRM quando útil.
+- lucide-react para ícones.
+- Feature First por domínio.
+- Supabase para Postgres, Auth, Storage e Realtime.
 - Evolution API server-side.
-- AI Studio/Gemini server-side.
+- Gemini server-side.
+- `src/proxy.ts` para proteção de rotas CRM.
+- Route handlers e server actions para operações sensíveis.
 
-## 15. Modelo de Dados Inicial
+## 14. Dados Principais
 
-Tabelas candidatas:
+Entidades centrais:
 
-- profiles;
-- user_roles;
-- departments;
-- leads;
-- lead_events;
-- pipeline_stages;
-- conversations;
-- messages;
-- contacts;
-- customers;
-- notes;
-- attachments;
-- quick_replies;
-- ai_sessions;
-- ai_messages;
-- ai_classifications;
-- whatsapp_instances;
-- site_settings;
-- blog_posts;
-- blog_categories;
-- team_members;
-- testimonials;
-- faqs.
+- `profiles`;
+- `user_roles`;
+- `departments`;
+- `leads`;
+- `contacts`;
+- `lead_events`;
+- `pipeline_stages`;
+- `conversations`;
+- `messages`;
+- `notes`;
+- `attachments`;
+- `customers`;
+- `whatsapp_instances`;
+- `whatsapp_connection_events`;
+- `ai_sessions`;
+- `ai_messages`;
+- `ai_classifications`;
+- `site_settings`;
+- `blog_posts`;
+- `blog_categories`;
+- `legal_areas`;
+- `business_hours`;
+- `quick_replies`.
 
-## 16. Criterios de Sucesso
+Buckets principais:
 
-- Site publico funcionando.
-- Blog/noticias funcionando.
-- Todo lead criado fica salvo.
-- Nenhuma mensagem de WhatsApp e perdida.
-- Atendente identifica rapidamente quem precisa de resposta.
-- Gestor acompanha volume, conversao e gargalos.
-- Dados sensiveis nao vazam para o frontend.
+- `site-images`: imagens públicas do site;
+- `blog-covers`: capas públicas do blog;
+- `crm-attachments`: anexos privados de conversas;
+- `profile-avatars`: fotos públicas de perfil.
 
-## 17. Riscos
+## 15. Segurança e Privacidade
 
-- WhatsApp ser chamado direto do browser.
-- IA responder como advogado.
-- Falta de RLS.
-- Perda de mensagens por webhook mal tratado.
-- Escopo virar ERP juridico.
-- Painel crescer sem foco em conversao.
+Requisitos:
+
+- RLS ativo em tabelas expostas;
+- permissões por perfil/role em tabela própria;
+- service role somente no servidor;
+- validação de entradas de formulários, webhooks e ações;
+- webhook da Evolution com segredo;
+- mensagens e dados jurídicos tratados como sensíveis;
+- dados pessoais fora dos eventos de marketing;
+- Storage com buckets e policies explícitas;
+- revisão de grants do role `anon` antes de produção.
+
+## 16. Critérios de Sucesso
+
+- Todo lead de site ou WhatsApp fica salvo.
+- Toda mensagem recebida pelo WhatsApp fica persistida antes de automação.
+- IA responde somente quando a conversa permite e passa para humano quando necessário.
+- Equipe consegue pausar IA ou assumir atendimento.
+- Conversas mostram claramente o contexto comercial do lead.
+- Pipeline mostra oportunidades operacionais.
+- Cliente convertido preserva histórico comercial.
+- Marketing mede conversões sem vazar dados pessoais.
+- Configurações de SEO, rastreamento, IA, WhatsApp e perfil são feitas pelo CRM.
+
+## 17. Riscos e Pendências
+
+- Ativar proteção de senha vazada no Supabase Auth antes de produção.
+- Testar GTM, GA4 e Meta Pixel com IDs reais de homologação.
+- Revisar textos legais com o escritório antes de publicar em produção.
+- Endurecer testes da IA para falha do Gemini, falha da Evolution, pergunta jurídica complexa e promessa de resultado.
+- Revisar grants públicos do Supabase para aplicar menor privilégio.
+- Considerar fila/job assíncrono para IA em produção se o webhook ficar lento.
