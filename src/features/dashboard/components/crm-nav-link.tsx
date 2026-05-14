@@ -12,9 +12,10 @@ import { cn } from "@/shared/lib/utils";
 
 type CrmNavLinksProps = {
   closeOnSelect?: boolean;
+  collapsed?: boolean;
 };
 
-export function CrmNavLinks({ closeOnSelect = false }: CrmNavLinksProps) {
+export function CrmNavLinks({ closeOnSelect = false, collapsed = false }: CrmNavLinksProps) {
   const pathname = usePathname();
 
   return (
@@ -28,13 +29,16 @@ export function CrmNavLinks({ closeOnSelect = false }: CrmNavLinksProps) {
             key={item.href}
             href={item.href}
             aria-current={isActive ? "page" : undefined}
+            aria-label={collapsed ? item.label : undefined}
+            title={collapsed ? item.label : undefined}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+              collapsed && "h-11 justify-center px-0",
               isActive && "bg-accent text-accent-foreground",
             )}
           >
             <Icon className="h-4 w-4" />
-            <span>{item.label}</span>
+            <span className={cn(collapsed && "sr-only")}>{item.label}</span>
           </Link>
         );
 

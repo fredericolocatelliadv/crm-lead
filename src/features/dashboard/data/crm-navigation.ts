@@ -8,6 +8,7 @@ import {
   Settings,
   Smartphone,
   UserCog,
+  UserRound,
   Users,
   Workflow,
 } from "lucide-react";
@@ -81,9 +82,18 @@ export const crmNavigation = [
   },
 ] as const;
 
+const crmAuxiliaryNavigation = [
+  {
+    label: "Meu perfil",
+    href: "/crm/perfil",
+    icon: UserRound,
+    description: "Dados de identificação do usuário logado.",
+  },
+] as const;
+
 export function getNavigationItem(pathname: string) {
   return (
-    crmNavigation
+    [...crmNavigation, ...crmAuxiliaryNavigation]
       .filter((item) => isNavigationItemActive(pathname, item.href))
       .sort((a, b) => b.href.length - a.href.length)[0] ?? crmNavigation[0]
   );
