@@ -42,7 +42,26 @@ type ContactRecord = {
 
 type LeadRecord = {
   contact_id?: string | null;
+  email?: string | null;
   id: string;
+  name?: string | null;
+};
+
+type SiteWhatsappIntent = {
+  best_contact_time: string | null;
+  contact_id: string | null;
+  email: string | null;
+  id: string;
+  intent_id: string;
+  lead_id: string | null;
+  legal_area: string | null;
+  marketing_attribution: Record<string, unknown>;
+  marketing_consent: boolean;
+  marketing_consent_at: string | null;
+  message: string;
+  name: string;
+  privacy_notice_accepted_at: string | null;
+  privacy_policy_version: string | null;
 };
 
 type PersistedIncomingMessage = {
@@ -51,6 +70,8 @@ type PersistedIncomingMessage = {
   leadId: string | null;
   messageId: string;
 };
+
+const SITE_WHATSAPP_INTENT_PATTERN = /\bFL-[A-Z0-9]{8,16}\b/i;
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -68,6 +89,12 @@ function normalizePhone(value: string) {
   const phone = value.split("@")[0]?.replace(/\D/g, "") ?? "";
 
   return phone.length >= 8 ? phone : null;
+}
+
+function extractSiteWhatsappIntentId(body: string | null) {
+  const match = body?.match(SITE_WHATSAPP_INTENT_PATTERN);
+
+  return match?.[0]?.toUpperCase() ?? null;
 }
 
 function getNestedRecord(root: JsonRecord, keys: string[]) {
@@ -441,7 +468,7 @@ function contactLeadFilter(contact: ContactRecord) {
 async function findOpenLeadByContact(supabase: SupabaseClient, contact: ContactRecord) {
   const { data } = await supabase
     .from("leads")
-    .select("id,contact_id")
+    .select("id,contact_id,name,email")
     .or(contactLeadFilter(contact))
     .is("converted_at", null)
     .is("lost_at", null)
@@ -498,6 +525,106 @@ async function findLostLeadByContact(supabase: SupabaseClient, contact: ContactR
   return data as LeadRecord | null;
 }
 
+async function findSiteWhatsappIntent(
+  supabase: SupabaseClient,
+  whatsappIntentId: string,
+) {
+  const { data } = await supabase
+    .from("site_whatsapp_intents")
+    .select(
+      "id,intent_id,name,email,message,legal_area,best_contact_time,marketing_consent,marketing_attribution,privacy_policy_version,privacy_notice_accepted_at,marketing_consent_at,contact_id,lead_id",
+    )
+    .eq("intent_id", whatsappIntentId)
+    .is("consumed_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data as SiteWhatsappIntent | null;
+}
+
+async function markSiteWhatsappIntentConsumed(
+  supabase: SupabaseClient,
+  params: {
+    contactId: string;
+    intentId: string;
+    leadId: string;
+  },
+) {
+  await supabase
+    .from("site_whatsapp_intents")
+    .update({
+      consumed_at: new Date().toISOString(),
+      contact_id: params.contactId,
+      lead_id: params.leadId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.intentId);
+}
+
+async function updateContactFromSiteWhatsappIntent(
+  supabase: SupabaseClient,
+  contact: ContactRecord,
+  intent: SiteWhatsappIntent,
+) {
+  const updates: Record<string, string> = {
+    name: intent.name,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (intent.email) updates.email = intent.email;
+
+  await supabase.from("contacts").update(updates).eq("id", contact.id);
+}
+
+async function applySiteWhatsappIntentToExistingLead(
+  supabase: SupabaseClient,
+  params: {
+    contact: ContactRecord;
+    intent: SiteWhatsappIntent;
+    lead: LeadRecord;
+  },
+) {
+  const { contact, intent, lead } = params;
+
+  await updateContactFromSiteWhatsappIntent(supabase, contact, intent);
+
+  await supabase
+    .from("leads")
+    .update({
+      best_contact_time: intent.best_contact_time,
+      contact_id: contact.id,
+      description: intent.message,
+      email: intent.email,
+      legal_area: intent.legal_area,
+      marketing_attribution: intent.marketing_attribution,
+      marketing_consent: intent.marketing_consent,
+      marketing_consent_at: intent.marketing_consent_at,
+      name: intent.name,
+      phone: contact.phone,
+      privacy_notice_accepted_at: intent.privacy_notice_accepted_at,
+      privacy_policy_version: intent.privacy_policy_version,
+      source: "site_whatsapp",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", lead.id);
+
+  await markSiteWhatsappIntentConsumed(supabase, {
+    contactId: contact.id,
+    intentId: intent.id,
+    leadId: lead.id,
+  });
+
+  await supabase.from("lead_events").insert({
+    description: "Atendimento iniciado no site vinculado ao número real do WhatsApp.",
+    event_type: "site_whatsapp_linked",
+    lead_id: lead.id,
+    metadata: {
+      whatsappIntentId: intent.intent_id,
+    },
+  });
+}
+
 async function ensureLeadUsesContact(
   supabase: SupabaseClient,
   lead: LeadRecord,
@@ -516,18 +643,42 @@ async function ensureLeadUsesContact(
 async function createLeadFromIncomingMessage(
   supabase: SupabaseClient,
   contact: ContactRecord,
+  message: IncomingMessage,
+  intent: SiteWhatsappIntent | null,
 ) {
+  const whatsappIntentId = extractSiteWhatsappIntentId(message.body);
+  const cameFromSiteWhatsapp = Boolean(intent ?? whatsappIntentId);
   const pipelineStageId = await getDefaultPipelineStageId(supabase);
+
+  if (intent) {
+    await updateContactFromSiteWhatsappIntent(supabase, contact, intent);
+  }
+
   const { data, error } = await supabase
     .from("leads")
     .insert({
+      best_contact_time: intent?.best_contact_time ?? null,
       contact_id: contact.id,
-      name: contact.name ?? contact.phone ?? "Contato do WhatsApp",
+      description: intent?.message ?? null,
+      email: intent?.email ?? null,
+      legal_area: intent?.legal_area ?? null,
+      name: intent?.name ?? contact.name ?? contact.phone ?? "Contato do WhatsApp",
       phone: contact.phone,
       pipeline_stage_id: pipelineStageId,
       priority: "medium",
-      source: "whatsapp",
-      summary: "Lead criado automaticamente a partir de uma mensagem recebida pelo WhatsApp.",
+      source: cameFromSiteWhatsapp ? "site_whatsapp" : "whatsapp",
+      summary: cameFromSiteWhatsapp
+        ? "Lead criado automaticamente a partir de mensagem do WhatsApp iniciada pelo site."
+        : "Lead criado automaticamente a partir de uma mensagem recebida pelo WhatsApp.",
+      ...(intent
+        ? {
+            marketing_attribution: intent.marketing_attribution,
+            marketing_consent: intent.marketing_consent,
+            marketing_consent_at: intent.marketing_consent_at,
+            privacy_notice_accepted_at: intent.privacy_notice_accepted_at,
+            privacy_policy_version: intent.privacy_policy_version,
+          }
+        : {}),
     })
     .select("id")
     .single();
@@ -535,11 +686,21 @@ async function createLeadFromIncomingMessage(
   if (error) throw error;
 
   await supabase.from("lead_events").insert({
-    description: "Lead criado a partir de mensagem recebida pelo WhatsApp.",
-    event_type: "whatsapp_lead_created",
+    description: cameFromSiteWhatsapp
+      ? "Lead criado a partir de atendimento iniciado pelo WhatsApp do site."
+      : "Lead criado a partir de mensagem recebida pelo WhatsApp.",
+    event_type: cameFromSiteWhatsapp ? "site_whatsapp_lead_created" : "whatsapp_lead_created",
     lead_id: data.id,
-    metadata: {},
+    metadata: whatsappIntentId ? { whatsappIntentId } : {},
   });
+
+  if (intent) {
+    await markSiteWhatsappIntentConsumed(supabase, {
+      contactId: contact.id,
+      intentId: intent.id,
+      leadId: data.id,
+    });
+  }
 
   return data;
 }
@@ -549,10 +710,35 @@ async function resolveLeadForMessage(
   contact: ContactRecord,
   message: IncomingMessage,
 ) {
+  const whatsappIntentId = extractSiteWhatsappIntentId(message.body);
+  const intent = whatsappIntentId
+    ? await findSiteWhatsappIntent(supabase, whatsappIntentId)
+    : null;
+  const customerLead = await findCustomerLeadByContact(supabase, contact);
+
+  if (customerLead) {
+    if (intent) {
+      await markSiteWhatsappIntentConsumed(supabase, {
+        contactId: contact.id,
+        intentId: intent.id,
+        leadId: customerLead.id,
+      });
+    }
+
+    return ensureLeadUsesContact(supabase, customerLead, contact);
+  }
+
   const existing =
-    (await findCustomerLeadByContact(supabase, contact)) ??
     (await findOpenLeadByContact(supabase, contact)) ??
     (await findLostLeadByContact(supabase, contact));
+
+  if (existing && intent) {
+    await applySiteWhatsappIntentToExistingLead(supabase, {
+      contact,
+      intent,
+      lead: existing,
+    });
+  }
 
   if (existing) return ensureLeadUsesContact(supabase, existing, contact);
 
@@ -560,7 +746,7 @@ async function resolveLeadForMessage(
     return null;
   }
 
-  return createLeadFromIncomingMessage(supabase, contact);
+  return createLeadFromIncomingMessage(supabase, contact, message, intent);
 }
 
 async function getOrCreateConversation(

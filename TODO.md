@@ -47,6 +47,7 @@ O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, S
 - [x] Banner de cookies com aceitar, recusar e personalizar.
 - [x] Personalização de cookies em modal, evitando poluição visual.
 - [x] Registro de ciência de privacidade e consentimento opcional nos leads.
+- [x] Captura rápida de WhatsApp sem pedir telefone, usando intenção temporária e protocolo para vincular o número real quando a mensagem chegar.
 - [ ] Revisão jurídica final dos documentos legais pelo escritório.
 - [ ] Testar site público com GTM real configurado.
 - [ ] Testar site público com Meta Pixel real configurado.
@@ -104,6 +105,7 @@ O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, S
 - [x] Criar contato e lead automaticamente quando necessário.
 - [x] Não criar lead novo para mensagem `fromMe`.
 - [x] Persistir mensagem antes de IA ou automação.
+- [x] Vincular atendimento iniciado pelo site ao lead real quando o webhook receber o protocolo do WhatsApp.
 - [ ] Testar falha da Evolution API sem perder mensagem ou histórico.
 - [ ] Testar cliente convertido falando novamente.
 - [ ] Testar lead perdido voltando.

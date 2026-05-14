@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         fieldErrors: parsed.error.flatten().fieldErrors,
-        message: "Revise os dados do agendamento.",
+        message: "Revise os dados enviados.",
         ok: false,
       },
       { status: 422 },

@@ -7,7 +7,6 @@ import { useState } from "react";
 
 import { readMarketingAttribution } from "@/features/site/lib/marketing-attribution";
 import { trackLeadConversion } from "@/features/site/lib/marketing-events";
-import { formatBrazilianPhone, getBrazilianPhoneError } from "@/features/site/lib/phone";
 import { executeRecaptcha } from "@/features/site/lib/recaptcha";
 import { useSettings } from "@/features/settings/hooks/use-settings";
 
@@ -23,7 +22,6 @@ type QuickWhatsAppValues = {
   message: string;
   marketingConsent: boolean;
   name: string;
-  phone: string;
   website: string;
 };
 
@@ -31,17 +29,25 @@ const initialValues: QuickWhatsAppValues = {
   message: "",
   marketingConsent: false,
   name: "",
-  phone: "",
   website: "",
 };
 
-function buildWhatsAppUrl(whatsappNumber: string, values: QuickWhatsAppValues) {
+function createWhatsAppIntentId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `FL-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
+  }
+
+  return `FL-${Date.now().toString(36).toUpperCase()}`;
+}
+
+function buildWhatsAppUrl(whatsappNumber: string, values: QuickWhatsAppValues, intentId: string) {
   const phone = whatsappNumber.replace(/\D/g, "");
   const text = [
     `Olá, meu nome é ${values.name}.`,
     values.message,
+    "",
+    `Protocolo: ${intentId}`,
   ]
-    .filter(Boolean)
     .join("\n");
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
@@ -58,7 +64,6 @@ export default function WhatsAppLeadCapture({
   const whatsappNumber = whatsappNumberOverride || settings?.whatsapp || "5511999999999";
   const [formData, setFormData] = useState<QuickWhatsAppValues>(initialValues);
   const [open, setOpen] = useState(false);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -69,25 +74,12 @@ export default function WhatsAppLeadCapture({
       return;
     }
 
-    if (name === "phone") {
-      const formattedPhone = formatBrazilianPhone(value);
-      setFormData({ ...formData, phone: formattedPhone });
-      setPhoneError(getBrazilianPhoneError(formattedPhone));
-      return;
-    }
-
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const nextPhoneError = getBrazilianPhoneError(formData.phone);
-
-    if (nextPhoneError) {
-      setPhoneError(nextPhoneError);
-      return;
-    }
-
+    const whatsappIntentId = createWhatsAppIntentId();
     setStatus("submitting");
 
     try {
@@ -101,12 +93,13 @@ export default function WhatsAppLeadCapture({
           marketingConsent: formData.marketingConsent,
           message: formData.message,
           name: formData.name,
-          phone: formData.phone,
+          phone: "",
           privacyNoticeAccepted: true,
           preferredContactChannel: "whatsapp",
           recaptchaToken,
           source: "site_whatsapp",
           website: formData.website,
+          whatsappIntentId,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -116,10 +109,9 @@ export default function WhatsAppLeadCapture({
 
       if (!response.ok) throw new Error("Não foi possível iniciar o atendimento.");
 
-      const whatsappUrl = buildWhatsAppUrl(whatsappNumber, formData);
+      const whatsappUrl = buildWhatsAppUrl(whatsappNumber, formData, whatsappIntentId);
       setFormData(initialValues);
       setOpen(false);
-      setPhoneError(null);
       setStatus("idle");
       trackLeadConversion({
         formType: "whatsapp",
@@ -169,7 +161,7 @@ export default function WhatsAppLeadCapture({
               Falar pelo WhatsApp
             </h3>
             <p className="mb-6 text-sm font-light text-zinc-400">
-              Informe seus dados para iniciar a conversa com nossa equipe.
+              Informe seu nome e a mensagem. O WhatsApp será aberto para você enviar a conversa pelo seu próprio número.
             </p>
 
             {status === "error" ? (
@@ -191,7 +183,7 @@ export default function WhatsAppLeadCapture({
 
               <div>
                 <label htmlFor="whatsapp-name" className="mb-2 block text-xs uppercase tracking-widest text-zinc-500">
-                  Nome completo
+                  Nome
                 </label>
                 <input
                   id="whatsapp-name"
@@ -203,30 +195,6 @@ export default function WhatsAppLeadCapture({
                   disabled={status === "submitting"}
                   className="w-full border border-white/10 bg-zinc-950 p-4 text-white outline-none transition-colors focus:border-gold disabled:opacity-50"
                 />
-              </div>
-
-              <div>
-                <label htmlFor="whatsapp-phone" className="mb-2 block text-xs uppercase tracking-widest text-zinc-500">
-                  WhatsApp
-                </label>
-                <input
-                  id="whatsapp-phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="(00) 00000-0000"
-                  aria-invalid={Boolean(phoneError)}
-                  aria-describedby={phoneError ? "whatsapp-phone-error" : undefined}
-                  disabled={status === "submitting"}
-                  className="w-full border border-white/10 bg-zinc-950 p-4 text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-gold disabled:opacity-50"
-                />
-                {phoneError ? (
-                  <p id="whatsapp-phone-error" className="mt-2 text-sm text-red-400">{phoneError}</p>
-                ) : null}
               </div>
 
               <div>

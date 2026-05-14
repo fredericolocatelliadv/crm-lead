@@ -65,7 +65,7 @@ export const siteLeadCaptureSchema = z.object({
   marketingAttribution: marketingAttributionSchema.optional().nullable(),
   message: z.string().trim().min(5, "Descreva brevemente o assunto."),
   name: z.string().trim().min(2, "Informe seu nome completo."),
-  phone: z.string().trim().min(8, "Informe seu WhatsApp ou telefone."),
+  phone: optionalText,
   preferredContactChannel: z.enum(["whatsapp", "email", "phone"], {
     error: "Selecione a preferência de retorno.",
   }),
@@ -75,6 +75,33 @@ export const siteLeadCaptureSchema = z.object({
   recaptchaToken: z.string().trim().min(1, "Validação de segurança indisponível."),
   source: z.enum(["site", "site_whatsapp"]),
   website: optionalText,
+  whatsappIntentId: optionalText,
+}).superRefine((value, ctx) => {
+  const normalizedPhone = value.phone ? normalizePhone(value.phone) : null;
+
+  if (value.source === "site" && !normalizedPhone) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Informe seu WhatsApp ou telefone.",
+      path: ["phone"],
+    });
+  }
+
+  if (normalizedPhone && !isValidBrazilianPhone(normalizedPhone)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Informe um telefone válido.",
+      path: ["phone"],
+    });
+  }
+
+  if (value.source === "site_whatsapp" && !value.whatsappIntentId) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Não foi possível iniciar o atendimento. Tente novamente.",
+      path: ["whatsappIntentId"],
+    });
+  }
 });
 
 export type SiteLeadCaptureInput = z.infer<typeof siteLeadCaptureSchema>;
@@ -107,7 +134,10 @@ function buildMarketingAttribution(input: SiteLeadCaptureInput) {
     fbclid: attribution?.fbclid ?? null,
     gclid: attribution?.gclid ?? null,
     landing_page: attribution?.landingPage ?? null,
-    marketing_attribution: attribution ?? {},
+    marketing_attribution: {
+      ...(attribution ?? {}),
+      whatsappIntentId: input.whatsappIntentId ?? null,
+    },
     referrer: attribution?.referrer ?? null,
     utm_campaign: attribution?.utmCampaign ?? null,
     utm_content: attribution?.utmContent ?? null,
@@ -263,7 +293,10 @@ async function registerLeadEvent(
       params.source === "site_whatsapp"
         ? "Contato iniciado pelo botão de WhatsApp do site."
         : "Solicitação de agendamento recebida pelo formulário do site.",
-    event_type: "site_appointment_requested",
+    event_type:
+      params.source === "site_whatsapp"
+        ? "site_whatsapp_requested"
+        : "site_appointment_requested",
     lead_id: params.leadId,
     metadata: {
       marketingConsent: params.marketingConsent,
@@ -274,14 +307,57 @@ async function registerLeadEvent(
   });
 }
 
+async function captureSiteWhatsappIntent(params: {
+  input: SiteLeadCaptureInput;
+  legalDocumentsVersion: string;
+  now: string;
+  supabase: SupabaseClient;
+}) {
+  const { input, legalDocumentsVersion, now, supabase } = params;
+  const whatsappIntentId = input.whatsappIntentId;
+
+  if (!whatsappIntentId) {
+    throw new Error("Não foi possível iniciar o atendimento.");
+  }
+
+  const marketingAttribution = buildMarketingAttribution(input);
+  const privacyConsent = buildPrivacyConsent(input, legalDocumentsVersion, now);
+
+  const { error } = await supabase
+    .from("site_whatsapp_intents")
+    .upsert(
+      {
+        best_contact_time: input.bestContactTime,
+        consumed_at: null,
+        contact_id: null,
+        email: input.email,
+        intent_id: whatsappIntentId,
+        lead_id: null,
+        legal_area: input.legalArea,
+        marketing_attribution: marketingAttribution.marketing_attribution,
+        message: input.message,
+        name: input.name,
+        ...privacyConsent,
+        updated_at: now,
+      },
+      { onConflict: "intent_id" },
+    );
+
+  if (error) {
+    throw new Error("Não foi possível criar o atendimento.");
+  }
+
+  return { leadId: null };
+}
+
 export async function captureSiteLead(input: SiteLeadCaptureInput) {
   if (input.website) {
     return { leadId: null };
   }
 
-  const normalizedPhone = normalizePhone(input.phone);
+  const normalizedPhone = input.phone ? normalizePhone(input.phone) : null;
 
-  if (!isValidBrazilianPhone(normalizedPhone)) {
+  if (input.source === "site" && !normalizedPhone) {
     throw new Error("Informe um telefone válido.");
   }
 
@@ -293,11 +369,21 @@ export async function captureSiteLead(input: SiteLeadCaptureInput) {
     throw new Error("Informe uma área jurídica válida.");
   }
 
-  const [contact, stageId, legalDocumentsVersion] = await Promise.all([
-    getOrCreateContact(supabase, input, normalizedPhone),
+  const [stageId, legalDocumentsVersion] = await Promise.all([
     getDefaultPipelineStageId(supabase),
     getCurrentLegalDocumentsVersion(supabase),
   ]);
+
+  if (!normalizedPhone) {
+    return captureSiteWhatsappIntent({
+      input,
+      legalDocumentsVersion,
+      now,
+      supabase,
+    });
+  }
+
+  const contact = await getOrCreateContact(supabase, input, normalizedPhone);
   const summary = formatSummary(input);
   const marketingAttribution = buildMarketingAttribution(input);
   const privacyConsent = buildPrivacyConsent(input, legalDocumentsVersion, now);
