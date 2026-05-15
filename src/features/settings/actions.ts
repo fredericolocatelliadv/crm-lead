@@ -339,7 +339,11 @@ function validateSiteImage(file: File): SettingsActionState | null {
   return null;
 }
 
-async function uploadSiteImage(file: File, folder: "team" | "testimonials", userId: string) {
+async function uploadSiteImage(
+  file: File,
+  folder: "social" | "team" | "testimonials",
+  userId: string,
+) {
   const supabase = await createClient();
   const name = safeFileName(file.name) || "imagem";
   const storagePath = `${folder}/${userId}/${randomUUID()}-${name}`;
@@ -414,6 +418,19 @@ export async function updateMarketingSettings(
   formData: FormData,
 ): Promise<SettingsActionState> {
   const user = await assertMarketingSettingsAccess();
+  const imageFile = formData.get("seoImageFile");
+  const socialImageFile = imageFile instanceof File && imageFile.size > 0 ? imageFile : null;
+  const imageError = socialImageFile ? validateSiteImage(socialImageFile) : null;
+
+  if (imageError) {
+    return {
+      ...imageError,
+      fieldErrors: {
+        seoImageFile: imageError.fieldErrors?.imageFile,
+      },
+    };
+  }
+
   const parsed = marketingSettingsSchema.safeParse({
     cookieConsentEnabled: formData.get("cookieConsentEnabled") === "on",
     googleAnalyticsId: formData.get("googleAnalyticsId"),
@@ -437,6 +454,22 @@ export async function updateMarketingSettings(
   }
 
   const supabase = createAdminClient();
+  let seoImageUrl = parsed.data.seoImageUrl;
+  let uploadedPath: string | null = null;
+
+  if (socialImageFile) {
+    try {
+      const upload = await uploadSiteImage(socialImageFile, "social", user.id);
+      seoImageUrl = upload.publicUrl;
+      uploadedPath = upload.storagePath;
+    } catch (error) {
+      return {
+        message: error instanceof Error ? error.message : "NÃ£o foi possÃ­vel enviar a imagem.",
+        ok: false,
+      };
+    }
+  }
+
   const { error } = await supabase.from("site_settings").upsert({
     cookie_consent_enabled: parsed.data.cookieConsentEnabled,
     google_analytics_id: parsed.data.googleAnalyticsId,
@@ -446,7 +479,7 @@ export async function updateMarketingSettings(
     meta_domain_verification: parsed.data.metaDomainVerification,
     meta_pixel_id: parsed.data.metaPixelId,
     seo_description: parsed.data.seoDescription,
-    seo_image_url: parsed.data.seoImageUrl,
+    seo_image_url: seoImageUrl,
     seo_title: parsed.data.seoTitle,
     site_url: parsed.data.siteUrl,
     tracking_enabled: parsed.data.trackingEnabled,
@@ -455,6 +488,10 @@ export async function updateMarketingSettings(
   });
 
   if (error) {
+    if (uploadedPath) {
+      await supabase.storage.from(SITE_IMAGES_BUCKET).remove([uploadedPath]);
+    }
+
     return {
       message: "Não foi possível salvar SEO e marketing.",
       ok: false,

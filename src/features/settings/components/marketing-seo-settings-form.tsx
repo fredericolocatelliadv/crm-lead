@@ -34,7 +34,7 @@ export function MarketingSeoSettingsForm({ settings }: { settings: SiteSettings 
   const hasMeta = Boolean(settings.metaPixelId);
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} encType="multipart/form-data" className="space-y-6">
       <div className="grid gap-3 md:grid-cols-3">
         <StatusBox
           label="Rastreamento"
@@ -81,13 +81,11 @@ export function MarketingSeoSettingsForm({ settings }: { settings: SiteSettings 
             placeholder="https://www.exemplo.com.br"
             defaultValue={settings.siteUrl}
           />
-          <Field
+          <SocialImageField
             description="Imagem padrão para compartilhamento em redes sociais."
-            error={state.fieldErrors?.seoImageUrl?.[0]}
+            error={state.fieldErrors?.seoImageFile?.[0] ?? state.fieldErrors?.seoImageUrl?.[0]}
             label="Imagem social padrão"
-            name="seoImageUrl"
-            placeholder="https://www.exemplo.com.br/imagem.jpg"
-            defaultValue={settings.seoImageUrl}
+            currentUrl={settings.seoImageUrl}
           />
         </div>
         <Field
@@ -244,6 +242,37 @@ function FormSection({
       </div>
       <div className="space-y-4">{children}</div>
     </section>
+  );
+}
+
+function SocialImageField({
+  currentUrl,
+  description,
+  error,
+  label,
+}: {
+  currentUrl?: string | null;
+  description: string;
+  error?: string;
+  label: string;
+}) {
+  return (
+    <label className="space-y-2">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <input type="hidden" name="seoImageUrl" value={currentUrl ?? ""} />
+      <Input name="seoImageFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" />
+      <span className="block text-xs leading-5 text-muted-foreground">{description}</span>
+      {currentUrl ? (
+        <span className="block overflow-hidden rounded-md border bg-background">
+          <img
+            src={currentUrl}
+            alt="Imagem social padrão atual"
+            className="aspect-[1.91/1] w-full object-cover"
+          />
+        </span>
+      ) : null}
+      {error ? <span className="block text-xs text-destructive">{error}</span> : null}
+    </label>
   );
 }
 
