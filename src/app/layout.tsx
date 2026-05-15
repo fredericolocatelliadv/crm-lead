@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
-import Script from "next/script";
 import { MarketingAttributionCapture } from "@/features/site/components/MarketingAttributionCapture";
 import { MarketingTags } from "@/features/site/components/MarketingTags";
 import {
@@ -76,8 +75,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim();
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -94,12 +91,6 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <MarketingAttributionCapture />
         <MarketingTags settings={marketingSettings} />
-        {recaptchaSiteKey ? (
-          <Script
-            src={`https://www.google.com/recaptcha/enterprise.js?render=${recaptchaSiteKey}`}
-            strategy="afterInteractive"
-          />
-        ) : null}
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

@@ -4,10 +4,6 @@ import {
   captureSiteLead,
   siteLeadCaptureSchema,
 } from "@/features/site/server/site-lead-capture";
-import {
-  RecaptchaVerificationError,
-  verifyRecaptchaToken,
-} from "@/features/site/server/recaptcha";
 
 export const runtime = "nodejs";
 
@@ -37,11 +33,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    await verifyRecaptchaToken({
-      action: parsed.data.source === "site_whatsapp" ? "SITE_WHATSAPP" : "SITE_APPOINTMENT",
-      request,
-      token: parsed.data.recaptchaToken,
-    });
     await captureSiteLead(parsed.data);
 
     return NextResponse.json({
@@ -51,17 +42,7 @@ export async function POST(request: Request) {
           : "Solicitação de agendamento recebida.",
       ok: true,
     });
-  } catch (error) {
-    if (error instanceof RecaptchaVerificationError) {
-      return NextResponse.json(
-        {
-          message: "Não foi possível validar o envio. Tente novamente.",
-          ok: false,
-        },
-        { status: 403 },
-      );
-    }
-
+  } catch {
     return NextResponse.json(
       {
         message: "Não foi possível salvar sua solicitação. Tente novamente.",

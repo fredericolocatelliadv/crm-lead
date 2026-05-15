@@ -7,7 +7,6 @@ import { useState } from "react";
 
 import { readMarketingAttribution } from "@/features/site/lib/marketing-attribution";
 import { trackLeadConversion } from "@/features/site/lib/marketing-events";
-import { executeRecaptcha } from "@/features/site/lib/recaptcha";
 import { useSettings } from "@/features/settings/hooks/use-settings";
 
 type WhatsAppLeadCaptureProps = {
@@ -83,7 +82,6 @@ export default function WhatsAppLeadCapture({
     setStatus("submitting");
 
     try {
-      const recaptchaToken = await executeRecaptcha("SITE_WHATSAPP");
       const response = await fetch("/api/leads/site", {
         body: JSON.stringify({
           bestContactTime: "",
@@ -96,7 +94,6 @@ export default function WhatsAppLeadCapture({
           phone: "",
           privacyNoticeAccepted: true,
           preferredContactChannel: "whatsapp",
-          recaptchaToken,
           source: "site_whatsapp",
           website: formData.website,
           whatsappIntentId,

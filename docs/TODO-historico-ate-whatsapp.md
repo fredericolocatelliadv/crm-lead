@@ -305,9 +305,6 @@ Objetivo: manter o formulário principal como solicitação de agendamento e tra
 - [x] Abrir WhatsApp somente após o lead do site ser salvo.
 - [x] Atualizar textos públicos de contato para linguagem de agendamento.
 - [x] Manter identidade visual, cores e layout geral do site público.
-- [x] Adicionar Google Cloud reCAPTCHA score-based no formulário de agendamento.
-- [x] Adicionar Google Cloud reCAPTCHA score-based na captura rápida do WhatsApp do site.
-- [x] Validar token e score do reCAPTCHA no endpoint server-side antes de criar lead.
 - [x] Rodar `npm.cmd run typecheck`.
 - [x] Rodar `npm.cmd run lint`.
 - [x] Rodar `npm.cmd run build`.

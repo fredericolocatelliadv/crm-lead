@@ -8,7 +8,6 @@ import type { LegalAreaOption } from '@/features/leads/types/legal-area';
 import { readMarketingAttribution } from '@/features/site/lib/marketing-attribution';
 import { trackLeadConversion } from '@/features/site/lib/marketing-events';
 import { formatBrazilianPhone, getBrazilianPhoneError } from '@/features/site/lib/phone';
-import { executeRecaptcha } from '@/features/site/lib/recaptcha';
 
 type ContactChannel = 'email' | 'phone' | 'whatsapp';
 
@@ -65,13 +64,11 @@ export default function ContactForm({ compact = false, legalAreas, onSuccess }: 
     setStatus('submitting');
     
     try {
-      const recaptchaToken = await executeRecaptcha('SITE_APPOINTMENT');
       const response = await fetch('/api/leads/site', {
         body: JSON.stringify({
           ...formData,
           marketingAttribution: readMarketingAttribution(),
           privacyNoticeAccepted: true,
-          recaptchaToken,
           source: 'site',
         }),
         headers: {

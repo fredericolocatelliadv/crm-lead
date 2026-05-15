@@ -72,7 +72,6 @@ export const siteLeadCaptureSchema = z.object({
   privacyNoticeAccepted: z
     .boolean()
     .refine((value) => value, "Confirme a ciência sobre o uso dos dados."),
-  recaptchaToken: z.string().trim().min(1, "Validação de segurança indisponível."),
   source: z.enum(["site", "site_whatsapp"]),
   website: optionalText,
   whatsappIntentId: optionalText,
