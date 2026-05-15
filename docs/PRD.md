@@ -1,6 +1,6 @@
 # PRD - Plataforma Comercial Jurídica
 
-Atualizado em: 14/05/2026
+Atualizado em: 15/05/2026
 
 ## 1. Resumo Executivo
 
@@ -14,7 +14,7 @@ O produto não é um ERP jurídico. O foco é transformar visitantes, contatos d
 - Organizar atendimento comercial em uma única caixa de conversas.
 - Automatizar o primeiro contato com IA dentro de limites seguros.
 - Classificar área jurídica, prioridade, potencial e necessidade de humano.
-- Permitir que a equipe assuma, pause a IA, responda e mova o lead no funil.
+- Permitir que a equipe assuma, pause a IA, devolva a conversa para automação, responda e mova o lead no funil.
 - Medir origem comercial, UTMs e eventos de conversão sem expor dados pessoais.
 - Manter SEO, blog, documentos legais e rastreamento de marketing configuráveis pelo painel.
 
@@ -46,11 +46,12 @@ O sistema não deve controlar:
 4. Sistema cria lead e registra consentimentos quando aplicável.
 5. Contato também pode chegar direto pelo WhatsApp conectado.
 6. Webhook salva a mensagem recebida antes de qualquer automação.
-7. IA responde quando a conversa permite automação e as diretrizes autorizam.
-8. IA registra resposta, resumo, classificação e alertas para a equipe.
-9. Humano pode assumir ou pausar IA por conversa.
-10. Lead avança no pipeline até conversão, perda ou reabertura.
-11. Lead convertido vira cliente e preserva histórico comercial.
+7. Quando a mensagem recebida for áudio, o sistema pode transcrever com Gemini no servidor e manter o anexo original no chat.
+8. IA responde quando a conversa permite automação e as diretrizes autorizam.
+9. IA registra resposta, resumo, classificação e alertas para a equipe.
+10. Humano pode assumir ou pausar IA por conversa.
+11. Lead avança no pipeline até conversão, perda ou reabertura.
+12. Lead convertido vira cliente e preserva histórico comercial.
 
 ## 6. Site Público
 
@@ -99,6 +100,8 @@ Regras de experiência:
 - ações críticas com confirmação clara para usuários leigos;
 - formulários separados de listas e detalhes;
 - estados vazios escritos para a operação do cliente, sem termos internos de desenvolvimento.
+- conversa deve mostrar notas internas salvas em uma área própria, sem obrigar o operador a rolar o histórico inteiro;
+- conversa deve indicar claramente se a IA está ativa, assistida, desativada no painel, pausada na conversa ou bloqueada por atendimento humano.
 
 ## 8. Leads, Pipeline e Clientes
 
@@ -137,6 +140,7 @@ Requisitos:
 - reaproveitamento de conversa por contato e canal;
 - envio humano de mensagens pelo CRM;
 - recebimento e envio de texto, imagem e áudio;
+- transcrição server-side de áudio recebido para permitir triagem pela IA;
 - anexos em bucket privado;
 - linguagem simples na tela, sem termos técnicos para o cliente final.
 
@@ -149,6 +153,7 @@ A IA é uma assistente inicial do atendimento. Ela pode:
 - cumprimentar;
 - coletar nome, telefone, cidade, área jurídica, resumo do caso, urgência e melhor horário;
 - responder de forma curta e segura;
+- usar transcrição de áudio recebido pelo WhatsApp como mensagem de entrada;
 - classificar área provável, prioridade e potencial;
 - resumir o contato para a equipe;
 - indicar quando precisa de humano;
@@ -167,7 +172,11 @@ Controles necessários:
 - configuração de operação, modelo, comportamento, contexto, diretrizes e teste pelo CRM;
 - botão para humano assumir atendimento;
 - botão para pausar IA por conversa;
+- botão para devolver conversa assumida por humano para a IA;
+- sinalização no chat quando a IA estiver desativada no painel administrativo;
+- ocultar ou bloquear ações locais de pausa quando a IA estiver desligada globalmente;
 - modal de resumo/classificação da IA no chat;
+- selo no chat para indicar quando uma mensagem de áudio possui transcrição;
 - persistência em `ai_sessions`, `ai_messages` e `ai_classifications`;
 - fallback seguro quando Gemini ou Evolution falhar.
 

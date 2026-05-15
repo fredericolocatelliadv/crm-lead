@@ -55,6 +55,7 @@ type MessageRow = {
   direction: string;
   id: string;
   kind: string;
+  metadata: Record<string, unknown> | null;
   sent_at: string;
 };
 
@@ -64,6 +65,20 @@ function relatedOne<T>(value: Related<T>) {
 
 function hasValue(value: string | null | undefined) {
   return Boolean(value && value.trim().length > 0);
+}
+
+function nestedRecord(value: Record<string, unknown> | null | undefined, key: string) {
+  const nested = value?.[key];
+
+  return typeof nested === "object" && nested !== null && !Array.isArray(nested)
+    ? (nested as Record<string, unknown>)
+    : null;
+}
+
+function hasAudioTranscription(message: Pick<MessageRow, "metadata">) {
+  const transcription = nestedRecord(message.metadata, "audioTranscription");
+
+  return typeof transcription?.text === "string" && transcription.text.trim().length > 0;
 }
 
 function mapMessageDirection(direction: string): AiConversationContext["recentMessages"][number]["direction"] {
@@ -134,7 +149,7 @@ export async function getAiConversationContext(
 
   const { data: targetMessageData, error: targetMessageError } = await supabase
     .from("messages")
-    .select("id,body,direction,kind,sent_at")
+    .select("id,body,direction,kind,metadata,sent_at")
     .eq("id", params.messageId)
     .eq("conversation_id", params.conversationId)
     .maybeSingle();
@@ -147,7 +162,7 @@ export async function getAiConversationContext(
 
   const { data: recentMessagesData } = await supabase
     .from("messages")
-    .select("id,body,direction,kind,sent_at")
+    .select("id,body,direction,kind,metadata,sent_at")
     .eq("conversation_id", params.conversationId)
     .order("sent_at", { ascending: false })
     .limit(params.maxRecentMessages ?? 8);
@@ -200,6 +215,7 @@ export async function getAiConversationContext(
       direction: targetMessage.direction,
       id: targetMessage.id,
       kind: targetMessage.kind,
+      transcribedAudio: hasAudioTranscription(targetMessage),
     },
   };
 }

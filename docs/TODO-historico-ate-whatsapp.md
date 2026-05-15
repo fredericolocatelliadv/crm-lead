@@ -605,3 +605,21 @@ Registrado em 14/05/2026:
 - [x] Rodar `npm.cmd run lint`.
 - [x] Rodar `npm.cmd run build`.
 - [x] Enviar commit `9935316 Add CRM user profile management` ao GitHub.
+
+## Atualização posterior - Usuários, Notas Internas e Estado da IA no Chat
+
+Registrado em 15/05/2026:
+
+- [x] Entregar gestão real de usuários internos em `/crm/usuarios`.
+- [x] Criar perfis profissionais `Administrador`, `Advogado` e `Especialista de Marketing`.
+- [x] Proteger menu, rotas, Server Actions e policies conforme permissões.
+- [x] Permitir vínculo opcional de usuário advogado com a equipe exibida no site.
+- [x] Enviar commit `a9f9945 Add professional user permissions` ao GitHub.
+- [x] Permitir consultar notas internas salvas dentro do chat sem rolar todo o histórico.
+- [x] Manter criação de nova nota interna no mesmo fluxo de atendimento.
+- [x] Criar ação `Devolver para IA` para remover responsável humano da conversa.
+- [x] Exibir no chat o estado real da IA: automática ativa, assistida, desativada no painel, pausada ou humano assumiu.
+- [x] Não oferecer `Pausar IA` quando a IA está desativada globalmente no painel.
+- [x] Rodar `npm.cmd run typecheck`.
+- [x] Rodar `npm.cmd run lint`.
+- [x] Rodar `npm.cmd run build`.

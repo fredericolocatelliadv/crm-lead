@@ -14,6 +14,7 @@ import type {
 const GEMINI_TIMEOUT_MS = 25_000;
 const GEMINI_RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 const GEMINI_MAX_ATTEMPTS = 3;
+const MAX_TRANSCRIPTION_LENGTH = 4_000;
 const DEFAULT_GEMINI_MODEL: AiAssistantModel = "gemini-2.5-flash";
 const ALLOWED_GEMINI_MODELS = new Set<string>([
   "gemini-2.5-flash",
@@ -93,6 +94,41 @@ function isRetryableGeminiError(error: unknown) {
   return typeof status === "number" && GEMINI_RETRYABLE_STATUSES.has(status);
 }
 
+function getSafetySettings() {
+  return [
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+  ];
+}
+
+function normalizeInlineBase64(value: string) {
+  const match = value.match(/^data:[^;]+;base64,(.+)$/);
+
+  return (match ? match[1] : value).replace(/\s/g, "");
+}
+
+function cleanTranscription(value: string | undefined) {
+  const text = value?.replace(/\s+/g, " ").trim();
+
+  if (!text) return null;
+
+  return text.slice(0, MAX_TRANSCRIPTION_LENGTH);
+}
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -114,24 +150,7 @@ export async function generateAiAssistantResponse(
             temperature: 0.2,
             responseMimeType: "application/json",
             responseJsonSchema: aiAssistantResponseJsonSchema,
-            safetySettings: [
-              {
-                category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-              },
-              {
-                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-              },
-              {
-                category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-              },
-              {
-                category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-              },
-            ],
+            safetySettings: getSafetySettings(),
           },
         }),
         GEMINI_TIMEOUT_MS,
@@ -171,4 +190,64 @@ export async function generateAiAssistantResponse(
   }
 
   throw new GeminiRequestError();
+}
+
+export async function transcribeAudioWithGemini(params: {
+  base64: string;
+  mimeType: string;
+  model?: string | null;
+}): Promise<string | null> {
+  const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+  const selectedModel = getGeminiModel(params.model);
+  const prompt = [
+    "Transcreva fielmente o áudio em português do Brasil quando houver fala.",
+    "Retorne apenas a transcrição limpa, sem comentários, sem resumo e sem formatação.",
+    "Se não houver fala compreensível, retorne: Áudio sem fala compreensível.",
+  ].join(" ");
+
+  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model: selectedModel,
+          contents: [
+            { text: prompt },
+            {
+              inlineData: {
+                data: normalizeInlineBase64(params.base64),
+                mimeType: params.mimeType,
+              },
+            },
+          ],
+          config: {
+            temperature: 0,
+            safetySettings: getSafetySettings(),
+          },
+        }),
+        GEMINI_TIMEOUT_MS,
+      );
+
+      return cleanTranscription(response.text ?? undefined);
+    } catch (error) {
+      if (error instanceof GeminiConfigurationError || error instanceof GeminiRequestError) {
+        throw error;
+      }
+
+      const retryable = isRetryableGeminiError(error);
+      const status = getErrorStatus(error);
+
+      if (retryable && attempt < GEMINI_MAX_ATTEMPTS) {
+        await delay(500 * attempt);
+        continue;
+      }
+
+      const requestError = new GeminiRequestError("Não foi possível transcrever o áudio agora.");
+      requestError.attempts = attempt;
+      requestError.retryable = retryable;
+      requestError.status = status;
+      throw requestError;
+    }
+  }
+
+  throw new GeminiRequestError("Não foi possível transcrever o áudio agora.");
 }

@@ -1,6 +1,6 @@
 # Análise do Sistema Real
 
-Data da análise: 14/05/2026
+Data da análise: 15/05/2026
 
 Projeto Supabase auditado: `crm_lead` (`ykkvwhsjqimcwraryaxw`)
 
@@ -10,11 +10,11 @@ Repositório remoto: `https://github.com/fredericolocatelliadv/crm-lead.git`
 
 ## Resumo Executivo
 
-O sistema está em fase de desenvolvimento, mas já possui uma base comercial funcional: site público, blog, captação de leads, CRM, WhatsApp via Evolution API, IA com Gemini, SEO/marketing, documentos legais, consentimento de cookies e perfil do usuário.
+O sistema está em fase de desenvolvimento, mas já possui uma base comercial funcional: site público, blog, captação de leads, CRM, WhatsApp via Evolution API, IA com Gemini, SEO/marketing, documentos legais, consentimento de cookies, perfil do usuário e gestão profissional de usuários internos.
 
-A etapa mais recente entregue foi a área de perfil no CRM, com upload de foto para Supabase Storage, menu de perfil no topo e menu lateral recolhível. O código foi validado com typecheck, lint e build antes do envio ao GitHub.
+A etapa mais recente enviada ao GitHub foi a gestão profissional de usuários e permissões, com perfis `Administrador`, `Advogado` e `Especialista de Marketing`, bloqueio de menu, rotas, Server Actions e policies conforme permissões, além de vínculo opcional de advogado com a equipe do site.
 
-O fluxo WhatsApp + IA também foi testado em cenário real de desenvolvimento: QR Code conectou, mensagens foram recebidas no CRM, respostas foram enviadas, a IA respondeu automaticamente e o controle humano por `Assumir`/`Pausar IA` interrompeu a automação sem bloquear novas mensagens.
+Depois disso, o chat de atendimento foi refinado para operação diária: notas internas agora podem ser consultadas em lista própria sem rolar todo o histórico, o botão `Devolver para IA` remove o responsável humano para permitir nova automação, e o topo da conversa mostra o estado real da IA considerando a configuração global do painel (`IA automática ativa`, `IA sem envio automático`, `IA desativada no painel`, `IA pausada` ou `Humano assumiu`).
 
 ## Escopo do Produto Atual
 
@@ -103,9 +103,9 @@ O bucket `profile-avatars` possui policies para usuários autenticados seleciona
 3. Mensagem recebida é salva antes da IA.
 4. Sistema resolve contato, lead e conversa.
 5. Se não existir lead, cria lead com origem `whatsapp`.
-6. Se a IA estiver ativa para a conversa, Gemini gera resposta segura.
+6. Se a IA estiver ativa globalmente, em modo automático, sem pausa local e sem humano assumido, Gemini gera resposta segura.
 7. Resposta automática é enviada e registrada no CRM.
-8. Humano pode assumir ou pausar a IA a qualquer momento.
+8. Humano pode assumir, pausar a IA ou devolver a conversa para a automação.
 
 ### IA
 
@@ -114,8 +114,10 @@ O bucket `profile-avatars` possui policies para usuários autenticados seleciona
 3. Prompt combina operação, comportamento, contexto e limites do escritório.
 4. Resposta é validada em estrutura controlada.
 5. Sistema salva mensagem, sessão e classificação.
-6. Chat exibe selo de IA e botão de resumo.
+6. Chat exibe selo de IA, botão de resumo e badge com o estado operacional da IA.
 7. Quando humano assume, a automação para naquela conversa.
+8. Quando a conversa é devolvida para a IA, o responsável humano é removido e a próxima mensagem recebida pode acionar a automação.
+9. Quando a IA global está desligada no painel, o chat mostra `IA desativada no painel` e não oferece ação de pausa local como se a automação estivesse ativa.
 
 ### Perfil
 
@@ -137,6 +139,8 @@ O bucket `profile-avatars` possui policies para usuários autenticados seleciona
 - Dashboard comercial.
 - Leads e pipeline.
 - Conversas com contexto comercial.
+- Conversas com consulta rápida de notas internas salvas.
+- Conversas com sinalização do estado real da IA no topo do atendimento.
 - Clientes convertidos com histórico preservado.
 - Relatórios simples.
 - Usuários, permissões e configurações.
@@ -163,6 +167,9 @@ O bucket `profile-avatars` possui policies para usuários autenticados seleciona
 - Persistência em `ai_sessions`, `ai_messages` e `ai_classifications`.
 - Botão `Resumo da IA` em modal.
 - Botões `Assumir` e `Pausar IA` por conversa.
+- Botão `Devolver para IA` para remover o responsável humano e permitir automação novamente.
+- Sinalização no chat quando a IA está desativada no painel ou em modo assistido.
+- Bloqueio visual de ação `Pausar IA` quando a IA está desligada globalmente.
 
 ### Marketing, SEO e Privacidade
 
@@ -186,6 +193,9 @@ Prioridade alta antes de produção:
 - confirmar payloads de marketing no navegador;
 - testar falhas do Gemini e da Evolution;
 - validar visualmente fluxo de upload de avatar autenticado;
+- validar visualmente o modal de notas internas no chat;
+- testar `Devolver para IA` com WhatsApp real e nova mensagem recebida;
+- testar desligamento global da IA em `/crm/ia` e confirmar sinalização no chat;
 - revisar rate limit/captcha nos endpoints públicos.
 
 Prioridade média:

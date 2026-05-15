@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import type { AiAssistantOperationMode } from "@/features/ai-assistant/types/ai-assistant";
 import type {
   ConversationFilters,
   ConversationOption,
@@ -15,6 +16,7 @@ import {
 } from "@/features/leads/types/lead";
 import type { PipelineStage } from "@/features/pipeline/types/pipeline";
 import { requireCurrentUser } from "@/server/auth/session";
+import { createAdminClient } from "@/server/supabase/admin";
 import { createClient } from "@/server/supabase/server";
 
 type RelatedProfile = { email: string | null; full_name: string | null };
@@ -139,6 +141,7 @@ export type ConversationMessage = {
   direction: MessageDirection;
   id: string;
   isAiGenerated: boolean;
+  isAudioTranscribed: boolean;
   aiSessionId: string | null;
   kind: string;
   retryCount: number;
@@ -196,7 +199,14 @@ export type ConversationQuickReply = {
   title: string;
 };
 
+export type ConversationAiAvailability = {
+  automaticReplyEnabled: boolean;
+  enabled: boolean;
+  operationMode: AiAssistantOperationMode;
+};
+
 export type ConversationInboxData = {
+  aiAvailability: ConversationAiAvailability;
   assignees: ConversationOption[];
   conversations: ConversationListItem[];
   currentUserId: string;
@@ -295,6 +305,41 @@ export function buildConversationQueryString(filters: ConversationFilters) {
   if (filters.mine) params.set("meus", "1");
 
   return params.toString();
+}
+
+function isAiAssistantOperationMode(value: unknown): value is AiAssistantOperationMode {
+  return value === "assisted" || value === "automatic" || value === "off";
+}
+
+async function getConversationAiAvailability(): Promise<ConversationAiAvailability> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("ai_assistant_settings")
+    .select("enabled,automatic_reply_enabled,operation_mode")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return {
+      automaticReplyEnabled: false,
+      enabled: false,
+      operationMode: "off",
+    };
+  }
+
+  const operationMode = isAiAssistantOperationMode(data.operation_mode)
+    ? data.operation_mode
+    : data.enabled
+      ? data.automatic_reply_enabled
+        ? "automatic"
+        : "assisted"
+      : "off";
+
+  return {
+    automaticReplyEnabled: operationMode === "automatic",
+    enabled: operationMode !== "off",
+    operationMode,
+  };
 }
 
 function buildConversationHref(id: string, filters: ConversationFilters) {
@@ -413,6 +458,7 @@ async function mapMessage(row: MessageRow): Promise<ConversationMessage> {
   const isAiGenerated =
     metadataBoolean(metadata, "ai") === true ||
     metadataString(metadata, "source") === "ai_assistant";
+  const audioTranscription = nestedMetadataRecord(metadata, "audioTranscription");
 
   return {
     attachments,
@@ -425,6 +471,7 @@ async function mapMessage(row: MessageRow): Promise<ConversationMessage> {
     direction: row.direction,
     id: row.id,
     isAiGenerated,
+    isAudioTranscribed: Boolean(metadataString(audioTranscription, "text")),
     kind: row.kind,
     retryCount: row.retry_count,
     sentAt: row.sent_at,
@@ -526,6 +573,7 @@ export async function getConversationInbox(
   const currentUser = await requireCurrentUser();
   const supabase = await createClient();
   const optionsPromise = getConversationOptions();
+  const aiAvailabilityPromise = getConversationAiAvailability();
 
   let query = supabase
     .from("conversations")
@@ -538,7 +586,11 @@ export async function getConversationInbox(
   if (filters.priority) query = query.eq("priority", filters.priority);
   if (filters.mine) query = query.eq("assigned_to", currentUser.id);
 
-  const [options, conversationsResult] = await Promise.all([optionsPromise, query]);
+  const [options, aiAvailability, conversationsResult] = await Promise.all([
+    optionsPromise,
+    aiAvailabilityPromise,
+    query,
+  ]);
 
   if (conversationsResult.error) {
     throw new Error("Não foi possível carregar as conversas.");
@@ -602,6 +654,7 @@ export async function getConversationInbox(
   if (!selectedId) {
     return {
       ...options,
+      aiAvailability,
       conversations,
       currentUserId: currentUser.id,
       filters,
@@ -687,6 +740,7 @@ export async function getConversationInbox(
 
   return {
     ...options,
+    aiAvailability,
     conversations,
     currentUserId: currentUser.id,
     filters,

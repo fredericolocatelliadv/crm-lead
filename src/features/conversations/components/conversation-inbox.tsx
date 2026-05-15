@@ -31,6 +31,7 @@ export function ConversationInbox({ data }: ConversationInboxProps) {
       <div className="grid min-h-0 gap-4 2xl:grid-cols-[420px_minmax(0,1fr)]">
         <ConversationList conversations={data.conversations} />
         <ConversationDetail
+          aiAvailability={data.aiAvailability}
           assignees={data.assignees}
           conversation={data.selectedConversation}
           pipelineStages={data.pipelineStages}

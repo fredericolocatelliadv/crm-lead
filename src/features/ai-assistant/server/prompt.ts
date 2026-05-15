@@ -110,7 +110,9 @@ Lead:
 - motivo de perda: ${optionalText(context.lead?.lostReason)}
 
 Mensagem atual:
-${optionalText(context.targetMessage.body)}
+${context.targetMessage.transcribedAudio ? "(transcrição de áudio recebido pelo WhatsApp)\n" : ""}${optionalText(
+    context.targetMessage.body,
+  )}
 
 Histórico recente:
 ${renderRecentMessages(context)}

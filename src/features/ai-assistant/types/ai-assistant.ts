@@ -98,6 +98,7 @@ export type AiConversationContext = {
     direction: string;
     id: string;
     kind: string;
+    transcribedAudio: boolean;
   };
 };
 

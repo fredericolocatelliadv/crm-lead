@@ -1081,6 +1081,7 @@ export async function resumeConversationAi(
       ai_pause_reason: null,
       ai_paused_at: null,
       ai_paused_by: null,
+      assigned_to: null,
       updated_at: now,
     })
     .eq("id", conversation.id);
@@ -1094,10 +1095,11 @@ export async function resumeConversationAi(
 
   await registerConversationEvent({
     actorId: user.id,
-    description: "IA retomada nesta conversa.",
+    description: "IA retomada nesta conversa. O atendimento foi devolvido para a automação.",
     eventType: "ai_conversation_resumed",
     leadId: conversation.lead_id,
     metadata: {
+      previousAssignedTo: conversation.assigned_to,
       previousPausedAt: conversation.ai_paused_at,
     },
   });
@@ -1105,7 +1107,7 @@ export async function resumeConversationAi(
   revalidateConversationPaths(conversation.id, conversation.lead_id);
 
   return {
-    message: "IA retomada nesta conversa.",
+    message: "IA retomada. A conversa foi devolvida para a automação.",
     ok: true,
   };
 }

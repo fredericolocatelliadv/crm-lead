@@ -149,6 +149,7 @@ function buildSimulationContext(message: string): AiConversationContext {
       direction: "inbound",
       id: "simulacao",
       kind: "text",
+      transcribedAudio: false,
     },
   };
 }

@@ -14,6 +14,7 @@ import {
   GeminiRequestError,
   generateAiAssistantResponse,
   getGeminiModel,
+  transcribeAudioWithGemini,
 } from "@/features/ai-assistant/server/gemini-client";
 import { buildAiAssistantPrompt } from "@/features/ai-assistant/server/prompt";
 import type {
@@ -22,6 +23,20 @@ import type {
   AiConversationContext,
 } from "@/features/ai-assistant/types/ai-assistant";
 
+const MAX_INLINE_AUDIO_BYTES = 19 * 1024 * 1024;
+
+type AudioAttachmentRow = {
+  file_size: number | null;
+  file_type: string | null;
+  storage_bucket: string;
+  storage_path: string;
+};
+
+type MessageMetadataRow = {
+  body: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
 function shouldBlockAutomaticRun(
   context: NonNullable<Awaited<ReturnType<typeof getAiConversationContext>>>,
 ) {
@@ -29,7 +44,11 @@ function shouldBlockAutomaticRun(
     return "Mensagem enviada pela equipe não deve acionar IA.";
   }
 
-  if (context.targetMessage.kind !== "text") {
+  if (context.targetMessage.kind === "audio" && !context.targetMessage.transcribedAudio) {
+    return "Áudio recebido, mas ainda sem transcrição para a IA.";
+  }
+
+  if (context.targetMessage.kind !== "text" && context.targetMessage.kind !== "audio") {
     return "IA automática ainda não processa mídia sem transcrição.";
   }
 
@@ -74,6 +93,138 @@ function textValue(value: string | null | undefined) {
   const trimmed = value?.trim();
 
   return trimmed && trimmed.length > 0 ? trimmed : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function metadataHasAudioTranscription(metadata: Record<string, unknown> | null | undefined) {
+  const transcription = metadata?.audioTranscription;
+
+  return (
+    isRecord(transcription) &&
+    typeof transcription.text === "string" &&
+    textValue(transcription.text) !== null
+  );
+}
+
+async function getAudioAttachment(
+  supabase: SupabaseClient,
+  messageId: string,
+) {
+  const { data } = await supabase
+    .from("attachments")
+    .select("file_size,file_type,storage_bucket,storage_path")
+    .eq("message_id", messageId)
+    .like("file_type", "audio/%")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data as AudioAttachmentRow | null;
+}
+
+async function downloadAudioAsBase64(
+  supabase: SupabaseClient,
+  attachment: AudioAttachmentRow,
+) {
+  if (attachment.file_size && attachment.file_size > MAX_INLINE_AUDIO_BYTES) {
+    return null;
+  }
+
+  const { data, error } = await supabase.storage
+    .from(attachment.storage_bucket)
+    .download(attachment.storage_path);
+
+  if (error || !data) return null;
+
+  const arrayBuffer = await data.arrayBuffer();
+
+  if (arrayBuffer.byteLength > MAX_INLINE_AUDIO_BYTES) {
+    return null;
+  }
+
+  return Buffer.from(arrayBuffer).toString("base64");
+}
+
+async function transcribeTargetAudioMessage(
+  supabase: SupabaseClient,
+  params: {
+    leadId: string | null;
+    messageId: string;
+    model: string | null;
+  },
+) {
+  const { data: messageData } = await supabase
+    .from("messages")
+    .select("body,metadata")
+    .eq("id", params.messageId)
+    .maybeSingle();
+  const message = messageData as MessageMetadataRow | null;
+
+  if (metadataHasAudioTranscription(message?.metadata)) {
+    return true;
+  }
+
+  const attachment = await getAudioAttachment(supabase, params.messageId);
+
+  if (!attachment?.file_type?.startsWith("audio/")) {
+    return false;
+  }
+
+  const base64 = await downloadAudioAsBase64(supabase, attachment);
+
+  if (!base64) {
+    await registerLeadEvent(supabase, {
+      description: "IA não transcreveu o áudio porque o arquivo não pôde ser baixado ou excede o limite suportado.",
+      leadId: params.leadId,
+      metadata: {
+        messageId: params.messageId,
+        reason: "audio_download_or_size_limit",
+      },
+    });
+    return false;
+  }
+
+  try {
+    const transcription = await transcribeAudioWithGemini({
+      base64,
+      mimeType: attachment.file_type,
+      model: params.model,
+    });
+
+    if (!transcription) return false;
+
+    await supabase
+      .from("messages")
+      .update({
+        body: transcription,
+        metadata: {
+          ...(message?.metadata ?? {}),
+          audioTranscription: {
+            createdAt: new Date().toISOString(),
+            model: getGeminiModel(params.model),
+            provider: "gemini",
+            text: transcription,
+          },
+        },
+      })
+      .eq("id", params.messageId);
+
+    return true;
+  } catch (error) {
+    await registerLeadEvent(supabase, {
+      description: "IA não conseguiu transcrever o áudio recebido.",
+      leadId: params.leadId,
+      metadata: {
+        error: error instanceof Error ? error.name : "UnknownAudioTranscriptionError",
+        messageId: params.messageId,
+      },
+    });
+
+    return false;
+  }
 }
 
 async function updateLeadFromAiResponse(
@@ -151,7 +302,7 @@ export async function runAiAssistantForMessage(
     };
   }
 
-  const context = await getAiConversationContext(supabase, {
+  let context = await getAiConversationContext(supabase, {
     conversationId: params.conversationId,
     maxRecentMessages: settings.maxContextMessages,
     messageId: params.messageId,
@@ -161,6 +312,30 @@ export async function runAiAssistantForMessage(
     return {
       decision: "skipped",
       reason: "Contexto não encontrado.",
+      shouldSendReply: false,
+    };
+  }
+
+  if (context.targetMessage.kind === "audio" && !context.targetMessage.transcribedAudio) {
+    const transcribed = await transcribeTargetAudioMessage(supabase, {
+      leadId: context.lead?.id ?? null,
+      messageId: context.targetMessage.id,
+      model: settings.model,
+    });
+
+    if (transcribed) {
+      context = await getAiConversationContext(supabase, {
+        conversationId: params.conversationId,
+        maxRecentMessages: settings.maxContextMessages,
+        messageId: params.messageId,
+      });
+    }
+  }
+
+  if (!context) {
+    return {
+      decision: "skipped",
+      reason: "Contexto não encontrado após transcrição do áudio.",
       shouldSendReply: false,
     };
   }

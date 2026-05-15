@@ -20,6 +20,7 @@ import {
   Shuffle,
   SmilePlus,
   Square,
+  StickyNote,
   UserCheck,
   X,
 } from "lucide-react";
@@ -38,7 +39,9 @@ import {
   type ConversationActionState,
 } from "@/features/conversations/actions";
 import type {
+  ConversationAiAvailability,
   ConversationAiSummary,
+  ConversationMessage,
   ConversationQuickReply,
 } from "@/features/conversations/data/conversation-directory";
 import type {
@@ -68,6 +71,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Textarea } from "@/shared/components/ui/textarea";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
@@ -87,7 +91,61 @@ const aiSummaryDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
+const internalNoteDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  month: "2-digit",
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+});
+
+type ConversationInternalNote = Pick<
+  ConversationMessage,
+  "authorName" | "body" | "id" | "sentAt"
+>;
+
+function getAiStatusPresentation(params: {
+  aiAvailability: ConversationAiAvailability;
+  aiPausedAt: string | null;
+  assigneeId: string | null;
+}) {
+  if (!params.aiAvailability.enabled) {
+    return {
+      label: "IA desativada no painel",
+      variant: "neutral" as const,
+    };
+  }
+
+  if (!params.aiAvailability.automaticReplyEnabled) {
+    return {
+      label: "IA sem envio automático",
+      variant: "warning" as const,
+    };
+  }
+
+  if (params.aiPausedAt) {
+    return {
+      label: "IA pausada",
+      variant: "warning" as const,
+    };
+  }
+
+  if (params.assigneeId) {
+    return {
+      label: "Humano assumiu",
+      variant: "warning" as const,
+    };
+  }
+
+  return {
+    label: "IA automática ativa",
+    variant: "success" as const,
+  };
+}
+
 type ConversationActionProps = {
+  aiAvailability: ConversationAiAvailability;
   aiPauseReason: string | null;
   aiPausedAt: string | null;
   aiPausedByName: string | null;
@@ -95,6 +153,7 @@ type ConversationActionProps = {
   assigneeId: string | null;
   assignees: ConversationOption[];
   conversationId: string;
+  internalNotes: ConversationInternalNote[];
   status: ConversationStatus;
 };
 
@@ -421,7 +480,13 @@ export function ConversationDetailActions(props: ConversationActionProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {!props.assigneeId ? <AssumeDialog conversationId={props.conversationId} /> : null}
+      <AiStatusBadge
+        aiAvailability={props.aiAvailability}
+        aiPausedAt={props.aiPausedAt}
+        assigneeId={props.assigneeId}
+      />
       <AiSummaryDialog
+        aiAvailability={props.aiAvailability}
         aiPauseReason={props.aiPauseReason}
         aiPausedAt={props.aiPausedAt}
         aiPausedByName={props.aiPausedByName}
@@ -429,7 +494,9 @@ export function ConversationDetailActions(props: ConversationActionProps) {
         assigneeId={props.assigneeId}
       />
       <AiAutomationDialog
+        aiAvailability={props.aiAvailability}
         aiPausedAt={props.aiPausedAt}
+        assigneeId={props.assigneeId}
         conversationId={props.conversationId}
       />
       <StatusDialog
@@ -437,12 +504,35 @@ export function ConversationDetailActions(props: ConversationActionProps) {
         currentStatus={props.status}
       />
       <TransferDialog {...props} />
-      <InternalNoteDialog conversationId={props.conversationId} />
+      <InternalNoteDialog
+        conversationId={props.conversationId}
+        notes={props.internalNotes}
+      />
     </div>
   );
 }
 
+function AiStatusBadge({
+  aiAvailability,
+  aiPausedAt,
+  assigneeId,
+}: Pick<ConversationActionProps, "aiAvailability" | "aiPausedAt" | "assigneeId">) {
+  const status = getAiStatusPresentation({
+    aiAvailability,
+    aiPausedAt,
+    assigneeId,
+  });
+
+  return (
+    <Badge variant={status.variant} className="gap-1.5 py-1">
+      <Bot className="h-3.5 w-3.5" />
+      {status.label}
+    </Badge>
+  );
+}
+
 function AiSummaryDialog({
+  aiAvailability,
   aiPauseReason,
   aiPausedAt,
   aiPausedByName,
@@ -450,14 +540,18 @@ function AiSummaryDialog({
   assigneeId,
 }: Pick<
   ConversationActionProps,
-  "aiPauseReason" | "aiPausedAt" | "aiPausedByName" | "aiSummary" | "assigneeId"
+  | "aiAvailability"
+  | "aiPauseReason"
+  | "aiPausedAt"
+  | "aiPausedByName"
+  | "aiSummary"
+  | "assigneeId"
 >) {
-  const aiStatusLabel = aiPausedAt
-    ? "IA pausada"
-    : assigneeId
-      ? "Humano assumiu"
-      : "IA automática ativa";
-  const aiStatusVariant = aiPausedAt || assigneeId ? "warning" : "success";
+  const aiStatus = getAiStatusPresentation({
+    aiAvailability,
+    aiPausedAt,
+    assigneeId,
+  });
   const hasHumanReview = aiSummary?.handoffRequired || aiSummary?.requiresHumanReview;
   const conversionPotential =
     typeof aiSummary?.conversionPotential === "number"
@@ -488,7 +582,7 @@ function AiSummaryDialog({
 
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={aiStatusVariant}>{aiStatusLabel}</Badge>
+            <Badge variant={aiStatus.variant}>{aiStatus.label}</Badge>
             {hasHumanReview ? <Badge variant="warning">Revisão humana</Badge> : null}
             {aiSummary?.immediateAttention ? <Badge variant="danger">Urgente</Badge> : null}
           </div>
@@ -613,14 +707,39 @@ function AssumeDialog({ conversationId }: { conversationId: string }) {
 }
 
 function AiAutomationDialog({
+  aiAvailability,
   aiPausedAt,
+  assigneeId,
   conversationId,
 }: {
+  aiAvailability: ConversationAiAvailability;
   aiPausedAt: string | null;
+  assigneeId: string | null;
   conversationId: string;
 }) {
-  return aiPausedAt ? (
-    <ResumeAiDialog conversationId={conversationId} />
+  if (!aiAvailability.enabled) {
+    return (
+      <Button type="button" variant="outline" size="sm" disabled>
+        <Bot className="h-4 w-4" />
+        IA desativada
+      </Button>
+    );
+  }
+
+  if (!aiAvailability.automaticReplyEnabled) {
+    return (
+      <Button type="button" variant="outline" size="sm" disabled>
+        <Bot className="h-4 w-4" />
+        IA assistida
+      </Button>
+    );
+  }
+
+  return aiPausedAt || assigneeId ? (
+    <ResumeAiDialog
+      conversationId={conversationId}
+      isHumanAssigned={Boolean(assigneeId)}
+    />
   ) : (
     <PauseAiDialog conversationId={conversationId} />
   );
@@ -695,13 +814,20 @@ function PauseAiDialog({ conversationId }: { conversationId: string }) {
   );
 }
 
-function ResumeAiDialog({ conversationId }: { conversationId: string }) {
+function ResumeAiDialog({
+  conversationId,
+  isHumanAssigned,
+}: {
+  conversationId: string;
+  isHumanAssigned: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(
     resumeConversationAi.bind(null, conversationId),
     initialState,
   );
+  const triggerLabel = isHumanAssigned ? "Devolver para IA" : "Retomar IA";
 
   useEffect(() => {
     if (!state.message) return;
@@ -721,14 +847,16 @@ function ResumeAiDialog({ conversationId }: { conversationId: string }) {
       <DialogTrigger asChild>
         <Button type="button" variant="outline" size="sm">
           <Play className="h-4 w-4" />
-          Retomar IA
+          {triggerLabel}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Retomar IA nesta conversa</DialogTitle>
+          <DialogTitle>
+            {isHumanAssigned ? "Devolver atendimento para IA" : "Retomar IA nesta conversa"}
+          </DialogTitle>
           <DialogDescription>
-            A IA voltará a responder automaticamente quando o atendimento não estiver assumido por uma pessoa.
+            A conversa será devolvida para a automação e deixará de ficar assumida por uma pessoa.
           </DialogDescription>
         </DialogHeader>
 
@@ -738,7 +866,7 @@ function ResumeAiDialog({ conversationId }: { conversationId: string }) {
               Cancelar
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? "Retomando..." : "Retomar IA"}
+              {isPending ? "Retomando..." : "Devolver para IA"}
             </Button>
           </DialogFooter>
         </form>
@@ -905,13 +1033,30 @@ function TransferDialog({
   );
 }
 
-function InternalNoteDialog({ conversationId }: { conversationId: string }) {
+function InternalNoteDialog({
+  conversationId,
+  notes,
+}: {
+  conversationId: string;
+  notes: ConversationInternalNote[];
+}) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState(notes.length > 0 ? "notes" : "create");
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(
     addConversationInternalNote.bind(null, conversationId),
     initialState,
   );
+  const noteCountLabel =
+    notes.length === 1 ? "1 nota salva" : `${notes.length} notas salvas`;
+
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+
+    if (nextOpen) {
+      setActiveTab(notes.length > 0 ? "notes" : "create");
+    }
+  }
 
   useEffect(() => {
     if (!state.message) return;
@@ -923,47 +1068,96 @@ function InternalNoteDialog({ conversationId }: { conversationId: string }) {
       return;
     }
 
+    setActiveTab("create");
     toast.error(state.message);
   }, [router, state]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline" size="sm">
           <MessageSquarePlus className="h-4 w-4" />
-          Nota interna
+          Notas internas
+          {notes.length > 0 ? (
+            <span className="ml-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              {notes.length}
+            </span>
+          ) : null}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Adicionar nota interna</DialogTitle>
+          <DialogTitle>Notas internas</DialogTitle>
           <DialogDescription>
-            Registre uma orientação para a equipe sem tratar como mensagem do cliente.
+            Consulte as observações salvas neste atendimento ou registre uma nova orientação para a equipe.
           </DialogDescription>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="conversation-note" className="text-sm font-medium">
-              Observação
-            </label>
-            <Textarea id="conversation-note" name="content" rows={5} />
-            {state.fieldErrors?.content?.[0] ? (
-              <p className="text-xs text-red-600 dark:text-red-300">
-                {state.fieldErrors.content[0]}
-              </p>
-            ) : null}
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="notes">Ver notas</TabsTrigger>
+            <TabsTrigger value="create">Criar nota</TabsTrigger>
+          </TabsList>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Salvando..." : "Salvar nota"}
-            </Button>
-          </DialogFooter>
-        </form>
+          <TabsContent value="notes" className="mt-4">
+            <div className="rounded-md border bg-muted/20">
+              <div className="flex items-center justify-between border-b px-3 py-2">
+                <p className="text-sm font-semibold text-foreground">Notas salvas</p>
+                <p className="text-xs text-muted-foreground">{noteCountLabel}</p>
+              </div>
+              {notes.length > 0 ? (
+                <div className="max-h-[360px] overflow-y-auto p-3">
+                  <div className="space-y-3">
+                    {notes.map((note) => (
+                      <article key={note.id} className="rounded-md border bg-background p-3">
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
+                          <StickyNote className="h-3.5 w-3.5" />
+                          <span>{note.authorName ?? "Equipe"}</span>
+                          <span>&middot;</span>
+                          <time dateTime={note.sentAt}>
+                            {internalNoteDateFormatter.format(new Date(note.sentAt))}
+                          </time>
+                        </div>
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-foreground [overflow-wrap:anywhere]">
+                          {note.body}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 text-sm text-muted-foreground">
+                  Nenhuma nota interna foi salva neste atendimento.
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="create" className="mt-4">
+            <form action={formAction} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="conversation-note" className="text-sm font-medium">
+                  Observação
+                </label>
+                <Textarea id="conversation-note" name="content" rows={5} />
+                {state.fieldErrors?.content?.[0] ? (
+                  <p className="text-xs text-red-600 dark:text-red-300">
+                    {state.fieldErrors.content[0]}
+                  </p>
+                ) : null}
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Salvando..." : "Salvar nota"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

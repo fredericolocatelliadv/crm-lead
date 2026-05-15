@@ -2,31 +2,32 @@
 
 Este arquivo é o checklist vivo do projeto. Ele deve orientar a próxima etapa de implementação sem substituir o `AGENTS.md`, que permanece como arquivo de regras.
 
-Atualizado em: 14/05/2026
+Atualizado em: 15/05/2026
 
 ## Estado Geral
 
 O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, SEO, marketing, privacidade e perfil do usuário.
 
-Última entrega registrada:
+Últimas entregas registradas:
 
-- menu lateral do CRM recolhível;
-- botão de recolher/expandir dentro do menu, acima do Dashboard;
-- menu de perfil no topo ao lado da troca de tema;
-- página `/crm/perfil`;
-- edição de dados básicos do usuário;
-- upload de foto de perfil para Supabase Storage;
-- bucket `profile-avatars`;
-- coluna `profiles.avatar_storage_path`;
-- correção do aviso do React sobre formulário com Server Action;
-- commit enviado ao GitHub: `9935316 Add CRM user profile management`.
+- gestão real de usuários internos em `/crm/usuarios`;
+- perfis profissionais `Administrador`, `Advogado` e `Especialista de Marketing`;
+- proteção de menu, rotas, Server Actions e policies conforme permissões;
+- vínculo opcional entre usuário advogado e equipe exibida no site;
+- commit enviado ao GitHub: `a9f9945 Add professional user permissions`;
+- chat com aba para ver notas internas salvas sem rolar o histórico completo;
+- ação `Devolver para IA` remove o responsável humano e permite automação novamente;
+- chat mostra o estado real da IA considerando o painel global: automática ativa, assistida, desativada no painel, pausada na conversa ou humano assumiu;
+- quando a IA está desativada no painel, o chat mostra `IA desativada` e não oferece `Pausar IA` como se a automação estivesse ativa.
+- áudios recebidos pelo WhatsApp podem ser transcritos com Gemini no servidor antes de a IA responder.
 
 Próxima entrega planejada:
 
-- evoluir `/crm/usuarios` para cadastro real de usuários internos;
-- criar perfis profissionais para Administrador, Advogado e Especialista de Marketing;
-- proteger menu, rotas, Server Actions e policies conforme permissões;
-- permitir que advogado seja vinculado opcionalmente à equipe exibida no site.
+- validar visualmente o fluxo autenticado do chat após os ajustes de notas internas e estado da IA;
+- testar na prática `Devolver para IA` seguido de nova mensagem recebida pelo WhatsApp;
+- testar a indicação `IA desativada no painel` após desligar a IA em `/crm/ia`;
+- testar áudio real recebido pelo WhatsApp e confirmar transcrição, selo `Transcrição do áudio` e resposta automática da IA;
+- finalizar validações operacionais dos perfis profissionais em `/crm/usuarios`.
 
 ## Validações Recentes
 
@@ -40,6 +41,10 @@ Próxima entrega planejada:
 - [x] Mensagens recebidas do WhatsApp aparecem no CRM.
 - [x] IA respondeu automaticamente em teste real.
 - [x] `Assumir` e `Pausar IA` interrompem resposta automática sem bloquear mensagens humanas.
+- [x] `Devolver para IA` remove responsável humano para permitir resposta automática novamente.
+- [x] Chat sinaliza quando a IA está desativada no painel administrativo.
+- [x] `Notas internas` permite ver notas salvas em lista própria e criar nova nota.
+- [x] Typecheck passou após implementar transcrição de áudio com Gemini.
 
 ## Site Público, SEO, Marketing e Privacidade
 
@@ -79,7 +84,10 @@ Próxima entrega planejada:
 - [x] Menu lateral recolhível no desktop.
 - [x] Menu mobile fecha ao escolher uma página.
 - [x] Destaque ativo do menu usa a rota real, sem manter Dashboard marcado fora da página.
+- [x] Conversa mostra notas internas salvas sem exigir rolagem pelo histórico inteiro.
+- [x] Conversa mostra badge operacional do estado real da IA no topo do atendimento.
 - [ ] Validar visualmente todas as telas principais em desktop e celular antes da homologação.
+- [ ] Validar visualmente o modal `Notas internas` no chat em desktop e celular.
 - [ ] Revisar estados vazios e mensagens de erro em telas operacionais.
 
 ## Perfil do Usuário
@@ -241,6 +249,7 @@ Observações dos advisors em 14/05/2026:
 - [x] Confirmações profissionais para ações críticas.
 - [x] Receber texto, imagem e áudio.
 - [x] Enviar texto, imagem e áudio pelo CRM.
+- [x] Transcrever áudio recebido pelo WhatsApp com Gemini no servidor para uso da IA.
 - [x] Criar contato e lead automaticamente quando necessário.
 - [x] Não criar lead novo para mensagem `fromMe`.
 - [x] Persistir mensagem antes de IA ou automação.
@@ -264,7 +273,16 @@ Observações dos advisors em 14/05/2026:
 - [x] Botão `Resumo da IA` abre modal com classificação e dados coletados.
 - [x] Botão `Assumir` pausa IA por conversa.
 - [x] Botão `Pausar IA` pausa IA por conversa.
+- [x] Botão `Devolver para IA` libera a conversa assumida por humano, removendo o responsável para a automação voltar.
+- [x] Chat considera a configuração global de `/crm/ia` antes de exibir ações de automação.
+- [x] Chat mostra `IA desativada no painel` quando a IA global está desligada.
+- [x] Chat mostra `IA sem envio automático` quando a IA está em modo assistido.
+- [x] Chat não oferece `Pausar IA` quando a IA está desativada no painel.
+- [x] IA usa transcrição de áudio recebida pelo WhatsApp quando o áudio possui anexo baixável no Storage.
 - [x] Prompt base preenchido com comportamento profissional e seguro.
+- [ ] Testar `Devolver para IA` com WhatsApp real e confirmar resposta automática na mensagem seguinte.
+- [ ] Testar áudio real recebido pelo WhatsApp e confirmar transcrição, selo no chat e resposta automática.
+- [ ] Testar desligamento global da IA em `/crm/ia` e confirmação visual no chat.
 - [ ] Testar pergunta jurídica complexa.
 - [ ] Testar tentativa de fazer a IA prometer resultado.
 - [ ] Testar falha do Gemini.

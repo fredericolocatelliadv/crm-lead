@@ -25,6 +25,7 @@ import {
 } from "@/features/conversations/components/conversation-badges";
 import { ConversationMessageViewport } from "@/features/conversations/components/conversation-message-viewport";
 import type {
+  ConversationAiAvailability,
   ConversationDetail as ConversationDetailType,
   ConversationMessage,
   ConversationMessageAttachment,
@@ -48,6 +49,7 @@ import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/shared/lib/utils";
 
 type ConversationDetailProps = {
+  aiAvailability: ConversationAiAvailability;
   assignees: ConversationOption[];
   conversation: ConversationDetailType | null;
   pipelineStages: PipelineStage[];
@@ -122,12 +124,17 @@ function MessageText({ body }: { body: string }) {
 }
 
 export function ConversationDetail({
+  aiAvailability,
   assignees,
   conversation,
   pipelineStages,
   quickReplies,
 }: ConversationDetailProps) {
   const lastMessage = conversation?.messages.at(-1) ?? null;
+  const internalNotes =
+    conversation?.messages
+      .filter((message) => message.direction === "internal")
+      .reverse() ?? [];
 
   if (!conversation) {
     return (
@@ -166,10 +173,12 @@ export function ConversationDetail({
             aiPausedAt={conversation.aiPausedAt}
             aiPauseReason={conversation.aiPauseReason}
             aiPausedByName={conversation.aiPausedByName}
+            aiAvailability={aiAvailability}
             aiSummary={conversation.aiSummary}
             assigneeId={conversation.assigneeId}
             assignees={assignees}
             conversationId={conversation.id}
+            internalNotes={internalNotes}
             status={conversation.status}
           />
         </div>
@@ -322,6 +331,19 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
             >
               <Bot className="h-3 w-3" />
               IA automática
+            </span>
+          ) : null}
+          {message.isAudioTranscribed ? (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5",
+                isOutbound
+                  ? "border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground"
+                  : "border-border bg-muted text-foreground",
+              )}
+            >
+              <Mic className="h-3 w-3" />
+              Transcrição do áudio
             </span>
           ) : null}
           {message.authorName ? <span>&middot; {message.authorName}</span> : null}
