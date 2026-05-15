@@ -96,6 +96,7 @@ type AiClassificationRow = {
 
 type MessageAttachmentRow = {
   file_name: string;
+  file_size: number | null;
   file_type: string | null;
   id: string;
   storage_bucket: string;
@@ -150,6 +151,7 @@ export type ConversationMessage = {
 
 export type ConversationMessageAttachment = {
   fileName: string;
+  fileSize: number | null;
   fileType: string | null;
   id: string;
   signedUrl: string | null;
@@ -444,6 +446,7 @@ async function signAttachment(
 
   return {
     fileName: row.file_name,
+    fileSize: row.file_size,
     fileType: row.file_type,
     id: row.id,
     signedUrl: data?.signedUrl ?? null,
@@ -682,7 +685,7 @@ export async function getConversationInbox(
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
     .select(
-      "id,direction,kind,body,metadata,delivery_status,delivery_error,retry_count,sent_at,created_at,sender:profiles!messages_sender_profile_id_fkey(full_name,email),attachments(id,file_name,file_type,storage_bucket,storage_path)",
+      "id,direction,kind,body,metadata,delivery_status,delivery_error,retry_count,sent_at,created_at,sender:profiles!messages_sender_profile_id_fkey(full_name,email),attachments(id,file_name,file_size,file_type,storage_bucket,storage_path)",
     )
     .eq("conversation_id", selectedId)
     .order("sent_at", { ascending: true });

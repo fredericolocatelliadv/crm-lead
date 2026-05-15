@@ -29,7 +29,7 @@ type IncomingMessage = {
 type IncomingMedia = {
   base64: string | null;
   fileName: string;
-  kind: "audio" | "image";
+  kind: "audio" | "document" | "image";
   messagePayload: unknown;
   mimeType: string;
 };
@@ -233,6 +233,8 @@ function imageExtension(mimeType: string) {
 function normalizeImageMimeType(mimeType: string) {
   const normalized = mimeType.toLowerCase();
 
+  if (normalized.includes("heic")) return "image/heic";
+  if (normalized.includes("heif")) return "image/heif";
   if (normalized.includes("png")) return "image/png";
   if (normalized.includes("webp")) return "image/webp";
   if (normalized.includes("avif")) return "image/avif";
@@ -240,8 +242,71 @@ function normalizeImageMimeType(mimeType: string) {
   return "image/jpeg";
 }
 
-function normalizeMediaMimeType(kind: IncomingMedia["kind"], mimeType: string) {
-  return kind === "audio" ? normalizeAudioMimeType(mimeType) : normalizeImageMimeType(mimeType);
+function safeIncomingFileName(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 120);
+}
+
+function getFileExtension(name: string | null) {
+  return name?.split(".").pop()?.trim().toLowerCase() ?? "";
+}
+
+function normalizeDocumentMimeType(mimeType: string, fileName: string | null) {
+  const normalized = mimeType.toLowerCase().split(";")[0]?.trim();
+  const extension = getFileExtension(fileName);
+
+  if (extension === "csv") return "text/csv";
+  if (extension === "doc") return "application/msword";
+  if (extension === "docx") {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  if (extension === "pdf") return "application/pdf";
+  if (extension === "txt") return "text/plain";
+  if (extension === "xls") return "application/vnd.ms-excel";
+  if (extension === "xlsx") {
+    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  }
+
+  if (
+    normalized === "application/msword" ||
+    normalized === "application/pdf" ||
+    normalized === "application/vnd.ms-excel" ||
+    normalized === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    normalized === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    normalized === "text/csv" ||
+    normalized === "text/plain"
+  ) {
+    return normalized;
+  }
+
+  return null;
+}
+
+function documentExtension(mimeType: string) {
+  if (mimeType === "application/msword") return "doc";
+  if (mimeType === "application/vnd.ms-excel") return "xls";
+  if (mimeType.includes("spreadsheetml")) return "xlsx";
+  if (mimeType.includes("wordprocessingml")) return "docx";
+  if (mimeType === "text/csv") return "csv";
+  if (mimeType === "text/plain") return "txt";
+
+  return "pdf";
+}
+
+function normalizeMediaMimeType(
+  kind: IncomingMedia["kind"],
+  mimeType: string,
+  fileName?: string | null,
+) {
+  if (kind === "audio") return normalizeAudioMimeType(mimeType);
+  if (kind === "document") return normalizeDocumentMimeType(mimeType, fileName ?? null);
+
+  return normalizeImageMimeType(mimeType);
 }
 
 function getBase64FromPayload(value: JsonRecord, mediaMessage: JsonRecord | null) {
@@ -253,21 +318,36 @@ function getBase64FromPayload(value: JsonRecord, mediaMessage: JsonRecord | null
 }
 
 function getIncomingMedia(value: JsonRecord, kind: IncomingMessage["kind"]) {
-  if (kind !== "audio" && kind !== "image") return null;
+  if (kind !== "audio" && kind !== "document" && kind !== "image") return null;
 
   const mediaMessage = getNestedRecord(value, [
     "message",
-    kind === "audio" ? "audioMessage" : "imageMessage",
+    kind === "audio" ? "audioMessage" : kind === "document" ? "documentMessage" : "imageMessage",
   ]);
-  const fallbackMimeType = kind === "audio" ? "audio/ogg" : "image/jpeg";
+  const fallbackMimeType =
+    kind === "audio" ? "audio/ogg" : kind === "document" ? "application/pdf" : "image/jpeg";
+  const rawFileName =
+    kind === "document"
+      ? stringValue(mediaMessage?.fileName) ?? stringValue(mediaMessage?.title)
+      : null;
   const mimeType = normalizeMediaMimeType(
     kind,
     stringValue(mediaMessage?.mimetype) ?? fallbackMimeType,
+    rawFileName,
   );
+  if (!mimeType) return null;
+
   const externalId = stringValue(getNestedRecord(value, ["key"])?.id) ?? kind;
-  const fileName = `${kind}-${externalId}.${
-    kind === "audio" ? audioExtension(mimeType) : imageExtension(mimeType)
-  }`;
+  const fileName =
+    rawFileName && safeIncomingFileName(rawFileName)
+      ? safeIncomingFileName(rawFileName)
+      : `${kind}-${externalId}.${
+          kind === "audio"
+            ? audioExtension(mimeType)
+            : kind === "document"
+              ? documentExtension(mimeType)
+              : imageExtension(mimeType)
+        }`;
 
   return {
     base64: getBase64FromPayload(value, mediaMessage),
@@ -831,10 +911,15 @@ async function resolveIncomingMedia(media: IncomingMedia) {
     convertToMp4: false,
     message: media.messagePayload,
   });
+  const mimeType = normalizeMediaMimeType(
+    media.kind,
+    response.mimetype ?? media.mimeType,
+    media.fileName,
+  );
 
   return {
     base64: response.base64 ?? null,
-    mimeType: normalizeMediaMimeType(media.kind, response.mimetype ?? media.mimeType),
+    mimeType: mimeType ?? media.mimeType,
   };
 }
 
@@ -855,7 +940,10 @@ async function attachMediaToMessage(
   const mimeType = normalizeMediaMimeType(
     params.media.kind,
     decoded.mimeType ?? media.mimeType,
+    params.media.fileName,
   );
+  if (!mimeType) return;
+
   const storagePath = `whatsapp/${params.media.kind}/${params.messageId}/${params.media.fileName}`;
 
   const { error: uploadError } = await supabase.storage

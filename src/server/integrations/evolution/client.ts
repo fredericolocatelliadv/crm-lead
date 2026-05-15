@@ -275,7 +275,7 @@ export async function sendEvolutionMediaMessage(params: {
   file: File;
   fileName: string;
   instanceName?: string;
-  mediaType: "audio" | "image";
+  mediaType: "audio" | "document" | "image";
   to: string;
 }) {
   const phone = params.to.replace(/\D/g, "");
@@ -309,12 +309,40 @@ export async function sendEvolutionMediaMessage(params: {
         fileName: params.fileName,
         media,
         mediatype: params.mediaType,
-        mimetype: params.file.type || "image/jpeg",
+        mimetype: params.file.type || getFallbackMimeType(params.fileName, params.mediaType),
         number: phone,
       },
       method: "POST",
     },
   );
+}
+
+function getFallbackMimeType(fileName: string, mediaType: "document" | "image") {
+  const extension = fileName.split(".").pop()?.toLowerCase();
+
+  if (mediaType === "image") {
+    if (extension === "avif") return "image/avif";
+    if (extension === "heic") return "image/heic";
+    if (extension === "heif") return "image/heif";
+    if (extension === "png") return "image/png";
+    if (extension === "webp") return "image/webp";
+
+    return "image/jpeg";
+  }
+
+  if (extension === "csv") return "text/csv";
+  if (extension === "doc") return "application/msword";
+  if (extension === "docx") {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  if (extension === "pdf") return "application/pdf";
+  if (extension === "txt") return "text/plain";
+  if (extension === "xls") return "application/vnd.ms-excel";
+  if (extension === "xlsx") {
+    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  }
+
+  return "application/octet-stream";
 }
 
 export async function getEvolutionMediaBase64(params: {

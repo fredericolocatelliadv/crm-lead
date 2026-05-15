@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   Bot,
+  FileText,
   ImageIcon,
   MessageSquarePlus,
   Mic,
@@ -81,6 +82,73 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
 const initialState: ConversationActionState = {
   ok: false,
 };
+const allowedAttachmentTypes = new Set([
+  "application/msword",
+  "application/pdf",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "audio/aac",
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "text/csv",
+  "text/plain",
+]);
+const allowedDocumentExtensions = new Set(["csv", "doc", "docx", "pdf", "txt", "xls", "xlsx"]);
+const attachmentAccept = [
+  ".csv",
+  ".doc",
+  ".docx",
+  ".pdf",
+  ".txt",
+  ".xls",
+  ".xlsx",
+  "application/msword",
+  "application/pdf",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "audio/aac",
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "text/csv",
+  "text/plain",
+].join(",");
+
+function getFileExtension(name: string) {
+  return name.split(".").pop()?.trim().toLowerCase() ?? "";
+}
+
+function isAllowedAttachment(file: File) {
+  if (allowedAttachmentTypes.has(file.type)) return true;
+
+  return !file.type && allowedDocumentExtensions.has(getFileExtension(file.name));
+}
+
+function getAttachmentLabel(file: File) {
+  if (file.type.startsWith("image/")) return "Imagem selecionada";
+  if (file.type.startsWith("audio/")) return "Áudio pronto";
+
+  return "Documento selecionado";
+}
 
 const aiSummaryDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -259,8 +327,8 @@ export function ConversationReplyComposer({
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/") && !file.type.startsWith("audio/")) {
-      setErrorMessage("Selecione uma imagem ou um áudio.");
+    if (!isAllowedAttachment(file)) {
+      setErrorMessage("Selecione imagem, áudio, PDF, Word, Excel, CSV ou TXT.");
       return;
     }
 
@@ -366,13 +434,15 @@ export function ConversationReplyComposer({
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
             {currentMedia.type.startsWith("image/") ? (
               <ImageIcon className="h-5 w-5" />
-            ) : (
+            ) : currentMedia.type.startsWith("audio/") ? (
               <Mic className="h-5 w-5" />
+            ) : (
+              <FileText className="h-5 w-5" />
             )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-foreground">
-              {currentMedia.type.startsWith("image/") ? "Imagem selecionada" : "Áudio pronto"}
+              {getAttachmentLabel(currentMedia)}
             </p>
             <p className="truncate text-xs text-muted-foreground">{currentMedia.name}</p>
             {currentMedia.type.startsWith("audio/") && mediaPreviewUrl ? (
@@ -398,7 +468,7 @@ export function ConversationReplyComposer({
         ref={fileInputRef}
         name="media"
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif,audio/aac,audio/mp4,audio/mpeg,audio/ogg,audio/wav,audio/webm"
+        accept={attachmentAccept}
         className="hidden"
         onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
       />
@@ -432,7 +502,7 @@ export function ConversationReplyComposer({
           type="button"
           variant="ghost"
           size="icon"
-          title="Anexar imagem ou áudio"
+          title="Anexar arquivo"
           onClick={() => fileInputRef.current?.click()}
           disabled={isPending || isRecording}
         >

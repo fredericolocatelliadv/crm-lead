@@ -27,7 +27,13 @@ export type ConversationActionState = {
 
 const CONVERSATION_ATTACHMENT_BUCKET = "crm-attachments";
 const MAX_REPLY_MEDIA_SIZE = 10 * 1024 * 1024;
+type ReplyMediaKind = "audio" | "document" | "image";
 const ALLOWED_REPLY_MEDIA_TYPES = new Set([
+  "application/msword",
+  "application/pdf",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "audio/aac",
   "audio/mp4",
   "audio/mpeg",
@@ -35,9 +41,22 @@ const ALLOWED_REPLY_MEDIA_TYPES = new Set([
   "audio/wav",
   "audio/webm",
   "image/avif",
+  "image/heic",
+  "image/heif",
   "image/jpeg",
   "image/png",
   "image/webp",
+  "text/csv",
+  "text/plain",
+]);
+const ALLOWED_REPLY_DOCUMENT_EXTENSIONS = new Set([
+  "csv",
+  "doc",
+  "docx",
+  "pdf",
+  "txt",
+  "xls",
+  "xlsx",
 ]);
 
 const optionalUuid = z.preprocess(
@@ -136,12 +155,26 @@ function getReplyMediaFile(formData: FormData) {
 function getReplyMediaKind(file: File) {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("audio/")) return "audio";
+  if (ALLOWED_REPLY_MEDIA_TYPES.has(file.type) || isAllowedDocumentExtension(file.name)) {
+    return "document";
+  }
 
   return null;
 }
 
-function getReplyMediaFallbackBody(kind: "audio" | "image") {
-  return kind === "audio" ? "Áudio enviado" : "Imagem enviada";
+function getReplyMediaFallbackBody(kind: ReplyMediaKind) {
+  if (kind === "audio") return "Áudio enviado";
+  if (kind === "document") return "Documento enviado";
+
+  return "Imagem enviada";
+}
+
+function getFileExtension(name: string) {
+  return name.split(".").pop()?.trim().toLowerCase() ?? "";
+}
+
+function isAllowedDocumentExtension(name: string) {
+  return ALLOWED_REPLY_DOCUMENT_EXTENSIONS.has(getFileExtension(name));
 }
 
 function safeFileName(name: string) {
@@ -156,7 +189,7 @@ function safeFileName(name: string) {
 
 async function uploadConversationAttachment(params: {
   file: File;
-  kind: "audio" | "image";
+  kind: ReplyMediaKind;
   leadId: string | null;
   messageId: string;
   userId: string;
@@ -341,7 +374,7 @@ async function markMessageSent(params: {
 async function sendReplyToWhatsApp(params: {
   body: string;
   media?: File | null;
-  mediaKind?: "audio" | "image" | null;
+  mediaKind?: ReplyMediaKind | null;
   phone: string;
 }) {
   if (params.media && params.mediaKind) {
@@ -395,7 +428,7 @@ export async function sendConversationReply(
   if (media && !mediaKind) {
     return {
       fieldErrors: {
-        media: ["Envie uma imagem ou um áudio."],
+        media: ["Envie uma imagem, um áudio ou um documento permitido."],
       },
       message: "Tipo de arquivo não permitido.",
       ok: false,
@@ -412,10 +445,14 @@ export async function sendConversationReply(
     };
   }
 
-  if (media && !ALLOWED_REPLY_MEDIA_TYPES.has(media.type)) {
+  if (
+    media &&
+    !ALLOWED_REPLY_MEDIA_TYPES.has(media.type) &&
+    !(mediaKind === "document" && !media.type && isAllowedDocumentExtension(media.name))
+  ) {
     return {
       fieldErrors: {
-        media: ["Use imagem JPG, PNG, WEBP ou áudio compatível."],
+        media: ["Use imagem, áudio, PDF, Word, Excel, CSV ou TXT."],
       },
       message: "Tipo de arquivo não permitido.",
       ok: false,
@@ -627,7 +664,9 @@ export async function retryConversationMessage(messageId: string) {
   }
 
   const mediaKind =
-    message.kind === "audio" || message.kind === "image" ? message.kind : null;
+    message.kind === "audio" || message.kind === "document" || message.kind === "image"
+      ? message.kind
+      : null;
   let media: File | null = null;
 
   if (mediaKind) {

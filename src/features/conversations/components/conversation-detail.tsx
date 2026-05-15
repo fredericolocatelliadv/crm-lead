@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   Check,
   Clock3,
+  FileText,
   ImageIcon,
   MessageCircle,
   Mic,
@@ -81,6 +82,13 @@ function splitTrailingUrlPunctuation(value: string) {
     punctuation,
     url: punctuation ? value.slice(0, -punctuation.length) : value,
   };
+}
+
+function formatFileSize(value: number | null) {
+  if (!value) return null;
+  if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function MessageText({ body }: { body: string }) {
@@ -426,7 +434,9 @@ function MessageAttachment({
   const isAudio = attachment.fileType?.startsWith("audio/");
   const isImage = attachment.fileType?.startsWith("image/");
   const audioDirectionLabel = direction === "outbound" ? "enviado" : "recebido";
+  const documentDirectionLabel = direction === "outbound" ? "enviado" : "recebido";
   const imageDirectionLabel = direction === "outbound" ? "enviada" : "recebida";
+  const fileSize = formatFileSize(attachment.fileSize);
 
   if (isAudio && attachment.signedUrl) {
     return (
@@ -463,9 +473,36 @@ function MessageAttachment({
     );
   }
 
+  if (attachment.signedUrl) {
+    return (
+      <a
+        href={attachment.signedUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-3 rounded-md border bg-background/70 p-3 text-foreground transition-colors hover:border-primary/50"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <FileText className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold">Documento {documentDirectionLabel}</p>
+          <p className="truncate text-sm font-medium">{attachment.fileName}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {[attachment.fileType, fileSize].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+        <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </a>
+    );
+  }
+
   return (
-    <div className="rounded-md border bg-background/70 p-3 text-xs font-medium text-foreground">
-      {attachment.fileName}
+    <div className="flex items-center gap-3 rounded-md border bg-background/70 p-3 text-foreground">
+      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{attachment.fileName}</p>
+        <p className="text-xs text-muted-foreground">Arquivo sem link disponível.</p>
+      </div>
     </div>
   );
 }
