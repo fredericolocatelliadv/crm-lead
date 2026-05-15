@@ -1,110 +1,143 @@
 "use client";
 
-import { motion } from 'motion/react';
+import { motion } from "motion/react";
+
+const pillars = [
+  {
+    label: "Atuação principal",
+    text: "Direito Previdenciário e Direito Bancário, com análise individualizada e condução responsável.",
+  },
+  {
+    label: "Método",
+    text: "Escuta, organização dos fatos, orientação clara e estratégia adequada para cada necessidade.",
+  },
+  {
+    label: "Compromisso",
+    text: "Ética profissional, transparência no atendimento e rigor técnico em cada etapa.",
+  },
+];
+
+const values = [
+  "Ética",
+  "Técnica",
+  "Transparência",
+  "Responsabilidade",
+  "Comprometimento",
+  "Clareza",
+];
 
 export default function About() {
   return (
-    <section id="about" className="py-24 bg-black overflow-x-clip">
-      <div className="max-w-7xl mx-auto px-5 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+    <section id="about" className="relative overflow-hidden bg-black py-28 sm:py-32">
+      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-gold/25 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
+
+      <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative"
+          transition={{ duration: 0.7 }}
+          className="text-center"
         >
-          <div className="aspect-3/4 overflow-hidden border border-gold/20">
-            <img 
-              src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&q=80&w=1000" 
-              alt="Escritório" 
-              className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-          <div className="absolute -bottom-10 right-0 lg:-right-10 w-64 h-64 bg-gold/5 border border-gold/10 -z-10"></div>
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-        >
-          <span className="text-gold text-sm uppercase tracking-[0.3em] mb-4 block">Sobre Nós</span>
-          <h2 className="serif text-4xl md:text-5xl font-light mb-8 leading-tight">
-            Compromisso com a <br />
-            <span className="italic text-gradient-gold font-bold">Ética e Excelência</span>
+          <span className="mb-5 block text-sm uppercase tracking-[0.35em] text-gold">
+            Sobre Nós
+          </span>
+          <h2 className="serif mx-auto max-w-5xl text-5xl font-light leading-tight text-white md:text-7xl">
+            Advocacia com técnica, ética e{" "}
+            <span className="italic text-gradient-gold font-bold">presença real.</span>
           </h2>
-          <p className="text-zinc-400 text-lg font-light leading-relaxed mb-6">
-            A Frederico & Locatelli Advogados Associados é um escritório jurídico comprometido com a prestação de serviços advocatícios pautados na ética, técnica e responsabilidade profissional.
+          <p className="mx-auto mt-8 max-w-3xl text-xl font-light leading-relaxed text-zinc-300">
+            Um escritório voltado para atendimento jurídico cuidadoso, comunicação clara e atuação estratégica em defesa dos direitos dos clientes.
           </p>
-          <p className="text-zinc-400 text-lg font-light leading-relaxed mb-6">
-            Com atuação direcionada principalmente ao Direito Previdenciário e Direito Bancário, oferecemos assessoria jurídica a pessoas físicas que buscam a efetivação de seus direitos junto à Previdência Social e a proteção contra práticas abusivas e fraudes no sistema financeiro.
-          </p>
-          <p className="text-zinc-400 text-lg font-light leading-relaxed mb-10">
-            Nossa atuação é voltada tanto à esfera administrativa quanto judicial, sempre com foco na análise individualizada de cada caso e na adoção de estratégias jurídicas adequadas às necessidades de cada cliente.
-          </p>
-          
-          {/* Mission & Vision */}
-          <div className="border-t border-white/5 pt-8 mb-8 space-y-6">
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.08 }}
+          className="mt-16 border-y border-gold/20 py-10"
+        >
+          <div className="grid gap-8 md:grid-cols-3">
+            {pillars.map((pillar) => (
+              <div key={pillar.label} className="md:border-l md:border-white/10 md:first:border-l-0 md:pl-8 md:first:pl-0">
+                <span className="text-xs uppercase tracking-[0.28em] text-gold/80">
+                  {pillar.label}
+                </span>
+                <p className="mt-4 text-lg font-light leading-relaxed text-zinc-300">
+                  {pillar.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.12 }}
+          className="mt-16 grid gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:gap-16"
+        >
+          <div className="space-y-7 text-xl font-light leading-relaxed text-zinc-400">
+            <p>
+              A Frederico & Locatelli Advogados Associados é um escritório jurídico comprometido com a prestação de serviços advocatícios pautados na ética, técnica e responsabilidade profissional.
+            </p>
+            <p>
+              Com atuação direcionada principalmente ao Direito Previdenciário e Direito Bancário, oferecemos assessoria jurídica a pessoas físicas que buscam a efetivação de seus direitos junto à Previdência Social e a proteção contra práticas abusivas e fraudes no sistema financeiro.
+            </p>
+            <p>
+              Nossa atuação é voltada tanto à esfera administrativa quanto judicial, sempre com foco na análise individualizada de cada caso e na adoção de estratégias jurídicas adequadas às necessidades de cada cliente.
+            </p>
+          </div>
+
+          <div className="border border-white/10 bg-zinc-950/70 p-8 sm:p-10">
             <div>
-              <h3 className="text-gold text-sm uppercase tracking-[0.3em] mb-3">Missão</h3>
-              <p className="text-zinc-400 font-light text-base leading-relaxed">
+              <h3 className="text-sm uppercase tracking-[0.3em] text-gold">Missão</h3>
+              <p className="mt-5 text-lg font-light leading-relaxed text-zinc-300">
                 Prestar serviços jurídicos com excelência técnica, ética e comprometimento, garantindo orientação clara e atuação responsável na defesa dos direitos dos clientes.
               </p>
             </div>
+
+            <div className="my-9 h-px bg-white/10" />
+
             <div>
-              <h3 className="text-gold text-sm uppercase tracking-[0.3em] mb-3">Visão</h3>
-              <p className="text-zinc-400 font-light text-base leading-relaxed">
+              <h3 className="text-sm uppercase tracking-[0.3em] text-gold">Visão</h3>
+              <p className="mt-5 text-lg font-light leading-relaxed text-zinc-300">
                 Ser reconhecido como um escritório de referência regional nas áreas de Direito Previdenciário e Direito Bancário, destacando-se pela confiança, transparência e eficiência.
               </p>
             </div>
           </div>
+        </motion.div>
 
-          {/* Values */}
-          <div className="border-t border-white/5 pt-8">
-            <h3 className="text-gold text-sm uppercase tracking-[0.3em] mb-6">Nossos Valores</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <span className="text-gold text-lg">✓</span>
-                <div>
-                  <h4 className="text-white text-base font-medium mb-1">Ética Profissional</h4>
-                  <p className="text-zinc-500 text-sm">Respeito às normas legais e princípios da advocacia</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-gold text-lg">✓</span>
-                <div>
-                  <h4 className="text-white text-base font-medium mb-1">Comprometimento</h4>
-                  <p className="text-zinc-500 text-sm">Dedicação individualizada a cada caso</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-gold text-lg">✓</span>
-                <div>
-                  <h4 className="text-white text-base font-medium mb-1">Transparência</h4>
-                  <p className="text-zinc-500 text-sm">Comunicação clara em todas as etapas</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-gold text-lg">✓</span>
-                <div>
-                  <h4 className="text-white text-base font-medium mb-1">Excelência Técnica</h4>
-                  <p className="text-zinc-500 text-sm">Atualização e aprimoramento constante</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-gold text-lg">✓</span>
-                <div>
-                  <h4 className="text-white text-base font-medium mb-1">Responsabilidade</h4>
-                  <p className="text-zinc-500 text-sm">Condução estratégica e organizada</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-gold text-lg">✓</span>
-                <div>
-                  <h4 className="text-white text-base font-medium mb-1">Acessibilidade</h4>
-                  <p className="text-zinc-500 text-sm">Direito compreensível ao cliente</p>
-                </div>
-              </div>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.16 }}
+          className="mt-16 border-t border-white/10 pt-10"
+        >
+          <div className="grid gap-8 lg:grid-cols-[0.35fr_0.65fr] lg:items-start">
+            <div>
+              <span className="text-sm uppercase tracking-[0.3em] text-gold">Nossos Valores</span>
+              <p className="mt-4 max-w-sm text-base font-light leading-relaxed text-zinc-400">
+                Princípios que orientam a forma como o escritório atende, comunica e conduz cada demanda.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-x-8 gap-y-5 lg:justify-end">
+              {values.map((value, index) => (
+                <span
+                  key={value}
+                  className={[
+                    "serif relative text-3xl font-light leading-none md:text-5xl",
+                    index % 2 === 0 ? "italic text-gradient-gold font-bold" : "text-white",
+                  ].join(" ")}
+                >
+                  {value}
+                </span>
+              ))}
             </div>
           </div>
         </motion.div>

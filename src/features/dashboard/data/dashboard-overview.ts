@@ -10,6 +10,8 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { getCurrentUserRole } from "@/features/users/data/user-directory";
+import { hasPermission } from "@/server/auth/permissions";
 import { createClient } from "@/server/supabase/server";
 
 export type DashboardPeriod = "today" | "7d" | "30d";
@@ -38,6 +40,7 @@ export type DashboardPipelineStage = {
 };
 
 export type DashboardRecentLead = {
+  conversationId: string | null;
   createdAt: string;
   email: string | null;
   id: string;
@@ -101,6 +104,13 @@ type RecentLeadRow = {
   pipeline_stages: { name: string | null } | { name: string | null }[] | null;
   priority: LeadPriority;
   source: string;
+};
+
+type LeadConversationRow = {
+  created_at: string;
+  id: string;
+  lead_id: string | null;
+  updated_at: string;
 };
 
 type ConversationRow = {
@@ -328,6 +338,9 @@ function buildMetrics(params: {
 
 export async function getDashboardOverview(period: DashboardPeriod): Promise<DashboardOverview> {
   const supabase = await createClient();
+  const role = await getCurrentUserRole();
+  const canReadConversations = hasPermission(role, "conversations:read");
+  const canReadCustomers = hasPermission(role, "customers:read");
   const range = getPeriodRange(period);
 
   const leadsInPeriodQuery = supabase
@@ -336,16 +349,20 @@ export async function getDashboardOverview(period: DashboardPeriod): Promise<Das
     .gte("created_at", range.start)
     .lte("created_at", range.end);
 
-  const conversationsOpenQuery = supabase
-    .from("conversations")
-    .select("id", { count: "exact", head: true })
-    .neq("status", "closed");
+  const conversationsOpenQuery = canReadConversations
+    ? supabase
+        .from("conversations")
+        .select("id", { count: "exact", head: true })
+        .neq("status", "closed")
+    : Promise.resolve({ count: 0, data: null, error: null });
 
-  const convertedQuery = supabase
-    .from("customers")
-    .select("id", { count: "exact", head: true })
-    .gte("converted_at", range.start)
-    .lte("converted_at", range.end);
+  const convertedQuery = canReadCustomers
+    ? supabase
+        .from("customers")
+        .select("id", { count: "exact", head: true })
+        .gte("converted_at", range.start)
+        .lte("converted_at", range.end)
+    : Promise.resolve({ count: 0, data: null, error: null });
 
   const lostQuery = supabase
     .from("leads")
@@ -373,21 +390,25 @@ export async function getDashboardOverview(period: DashboardPeriod): Promise<Das
     .order("created_at", { ascending: false })
     .limit(5);
 
-  const conversationsQuery = supabase
-    .from("conversations")
-    .select("id,channel,status,priority,last_message_at,created_at,leads(name,phone,legal_area)")
-    .eq("status", "unanswered")
-    .order("updated_at", { ascending: false })
-    .limit(5);
+  const conversationsQuery = canReadConversations
+    ? supabase
+        .from("conversations")
+        .select("id,channel,status,priority,last_message_at,created_at,leads(name,phone,legal_area)")
+        .eq("status", "unanswered")
+        .order("updated_at", { ascending: false })
+        .limit(5)
+    : Promise.resolve({ data: [], error: null });
 
-  const messagesQuery = supabase
-    .from("messages")
-    .select("conversation_id,direction,sent_at")
-    .gte("sent_at", range.start)
-    .lte("sent_at", range.end)
-    .in("direction", ["inbound", "outbound"])
-    .order("sent_at", { ascending: true })
-    .limit(1000);
+  const messagesQuery = canReadConversations
+    ? supabase
+        .from("messages")
+        .select("conversation_id,direction,sent_at")
+        .gte("sent_at", range.start)
+        .lte("sent_at", range.end)
+        .in("direction", ["inbound", "outbound"])
+        .order("sent_at", { ascending: true })
+        .limit(1000)
+    : Promise.resolve({ data: [], error: null });
 
   const [
     leadsInPeriod,
@@ -429,7 +450,7 @@ export async function getDashboardOverview(period: DashboardPeriod): Promise<Das
   const openLeadRows = (leadStagesResult.data ?? []) as LeadStageRow[];
   const customerLeadIds = new Set<string>();
 
-  if (openLeadRows.length > 0) {
+  if (openLeadRows.length > 0 && canReadCustomers) {
     const { data: customers, error: customersError } = await supabase
       .from("customers")
       .select("lead_id")
@@ -466,8 +487,33 @@ export async function getDashboardOverview(period: DashboardPeriod): Promise<Das
       value: leadStageCounts.get(stage.id) ?? 0,
     }));
 
-  const recentLeads: DashboardRecentLead[] = ((recentLeadsResult.data ?? []) as RecentLeadRow[]).map(
+  const recentLeadRows = (recentLeadsResult.data ?? []) as RecentLeadRow[];
+  const conversationByLeadId = new Map<string, string>();
+
+  if (recentLeadRows.length > 0 && canReadConversations) {
+    const { data: leadConversations, error: leadConversationsError } = await supabase
+      .from("conversations")
+      .select("id,lead_id,updated_at,created_at")
+      .in(
+        "lead_id",
+        recentLeadRows.map((lead) => lead.id),
+      )
+      .order("updated_at", { ascending: false });
+
+    if (leadConversationsError) {
+      throw new Error("Não foi possível carregar as conversas dos leads recentes.");
+    }
+
+    for (const conversation of (leadConversations ?? []) as LeadConversationRow[]) {
+      if (conversation.lead_id && !conversationByLeadId.has(conversation.lead_id)) {
+        conversationByLeadId.set(conversation.lead_id, conversation.id);
+      }
+    }
+  }
+
+  const recentLeads: DashboardRecentLead[] = recentLeadRows.map(
     (lead) => ({
+      conversationId: conversationByLeadId.get(lead.id) ?? null,
       createdAt: lead.created_at,
       email: lead.email,
       id: lead.id,

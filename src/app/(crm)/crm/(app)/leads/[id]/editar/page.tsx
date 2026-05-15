@@ -5,6 +5,8 @@ import { updateLead } from "@/features/leads/actions";
 import { LeadForm } from "@/features/leads/components/lead-form";
 import { getActiveLegalAreaOptions } from "@/features/leads/data/legal-areas";
 import { getLeadById, leadToFormValues } from "@/features/leads/data/lead-directory";
+import { getPageAccess } from "@/server/auth/route-guards";
+import { AccessDenied } from "@/shared/components/crm/access-denied";
 import { Badge } from "@/shared/components/ui/badge";
 
 type EditLeadPageProps = {
@@ -14,6 +16,12 @@ type EditLeadPageProps = {
 };
 
 export default async function EditLeadPage({ params }: EditLeadPageProps) {
+  const access = await getPageAccess("leads:write");
+
+  if (!access.allowed) {
+    return <AccessDenied description="Seu perfil não possui permissão para editar leads." />;
+  }
+
   const { id } = await params;
   const customerId = await getCustomerIdByLeadId(id);
 

@@ -12,6 +12,7 @@ import {
   StickyNote,
 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { retryConversationMessage } from "@/features/conversations/actions";
 import {
@@ -60,9 +61,64 @@ const messageDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "2-digit",
   timeZone: "America/Sao_Paulo",
 });
+const urlPattern = /(?:https?:\/\/|www\.)[^\s<>"']+/gi;
+const trailingUrlPunctuationPattern = /[),.;:!?]+$/;
 
 function formatMessageDate(value: string) {
   return messageDateFormatter.format(new Date(value));
+}
+
+function normalizeMessageUrl(value: string) {
+  return value.startsWith("www.") ? `https://${value}` : value;
+}
+
+function splitTrailingUrlPunctuation(value: string) {
+  const punctuation = value.match(trailingUrlPunctuationPattern)?.[0] ?? "";
+
+  return {
+    punctuation,
+    url: punctuation ? value.slice(0, -punctuation.length) : value,
+  };
+}
+
+function MessageText({ body }: { body: string }) {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const match of body.matchAll(urlPattern)) {
+    const rawValue = match[0];
+    const index = match.index ?? 0;
+
+    if (index > lastIndex) {
+      parts.push(body.slice(lastIndex, index));
+    }
+
+    const { punctuation, url } = splitTrailingUrlPunctuation(rawValue);
+
+    parts.push(
+      <a
+        key={`${index}-${url}`}
+        href={normalizeMessageUrl(url)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="break-all font-medium underline underline-offset-2 hover:opacity-80"
+      >
+        {url}
+      </a>,
+    );
+
+    if (punctuation) {
+      parts.push(punctuation);
+    }
+
+    lastIndex = index + rawValue.length;
+  }
+
+  if (lastIndex < body.length) {
+    parts.push(body.slice(lastIndex));
+  }
+
+  return <>{parts}</>;
 }
 
 export function ConversationDetail({
@@ -279,9 +335,13 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
           </span>
         </div>
         {message.body ? (
-          <p className="whitespace-pre-wrap text-sm leading-6">{message.body}</p>
+          <p className="whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">
+            <MessageText body={message.body} />
+          </p>
         ) : message.attachments.length === 0 ? (
-          <p className="whitespace-pre-wrap text-sm leading-6">Mensagem sem texto.</p>
+          <p className="whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">
+            Mensagem sem texto.
+          </p>
         ) : null}
         {message.attachments.length > 0 ? (
           <div className="mt-3 space-y-2">

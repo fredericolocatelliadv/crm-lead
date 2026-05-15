@@ -4,23 +4,30 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
-  crmNavigation,
+  getAccessibleNavigation,
   isNavigationItemActive,
 } from "@/features/dashboard/data/crm-navigation";
+import type { UserRole } from "@/features/users/types/roles";
 import { SheetClose } from "@/shared/components/ui/sheet";
 import { cn } from "@/shared/lib/utils";
 
 type CrmNavLinksProps = {
   closeOnSelect?: boolean;
   collapsed?: boolean;
+  role: UserRole;
 };
 
-export function CrmNavLinks({ closeOnSelect = false, collapsed = false }: CrmNavLinksProps) {
+export function CrmNavLinks({
+  closeOnSelect = false,
+  collapsed = false,
+  role,
+}: CrmNavLinksProps) {
   const pathname = usePathname();
+  const navigation = getAccessibleNavigation(role);
 
   return (
     <>
-      {crmNavigation.map((item) => {
+      {navigation.map((item) => {
         const Icon = item.icon;
         const isActive = isNavigationItemActive(pathname, item.href);
 

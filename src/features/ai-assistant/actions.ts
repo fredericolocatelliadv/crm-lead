@@ -90,7 +90,7 @@ const aiAssistantSimulationSchema = aiAssistantSettingsSchema.extend({
 async function assertAiSettingsAccess() {
   const [user, role] = await Promise.all([requireCurrentUser(), getCurrentUserRole()]);
 
-  if (!hasPermission(role, "settings:manage")) {
+  if (!hasPermission(role, "ai:manage")) {
     throw new Error("Permissão insuficiente.");
   }
 

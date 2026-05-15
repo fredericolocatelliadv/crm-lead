@@ -83,7 +83,13 @@ function getConnectionUseLabel(status: WhatsAppConnectionStatus) {
   return labels[status];
 }
 
-export function WhatsAppConnectionView({ data }: { data: WhatsAppConnectionData }) {
+export function WhatsAppConnectionView({
+  canManage = true,
+  data,
+}: {
+  canManage?: boolean;
+  data: WhatsAppConnectionData;
+}) {
   const status = data.connection?.connectionStatus ?? "not_configured";
   const hasConnection = Boolean(data.connection && status !== "not_configured");
   const showQrCode = status === "connecting" && data.qrCodeDataUrl;
@@ -134,7 +140,9 @@ export function WhatsAppConnectionView({ data }: { data: WhatsAppConnectionData 
           <CardHeader>
             <CardTitle>Conexão do WhatsApp</CardTitle>
             <CardDescription>
-              Controle o canal usado para enviar mensagens pelo atendimento.
+              {canManage
+                ? "Controle o canal usado para enviar mensagens pelo atendimento."
+                : "Acompanhe o canal usado para enviar mensagens pelo atendimento."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -172,10 +180,12 @@ export function WhatsAppConnectionView({ data }: { data: WhatsAppConnectionData 
               </div>
             )}
 
-            <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-start">
-              {showPrimaryActions ? <WhatsAppPrimaryActions status={status} /> : null}
-              <WhatsAppDangerActions hasConnection={hasConnection} status={status} />
-            </div>
+            {canManage ? (
+              <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-start">
+                {showPrimaryActions ? <WhatsAppPrimaryActions status={status} /> : null}
+                <WhatsAppDangerActions hasConnection={hasConnection} status={status} />
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 

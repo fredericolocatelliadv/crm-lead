@@ -1,6 +1,8 @@
 import { PipelineBoard } from "@/features/pipeline/components/pipeline-board";
 import { PipelineFilters } from "@/features/pipeline/components/pipeline-filters";
 import { getPipelineBoard, parsePipelineFilters } from "@/features/pipeline/data/pipeline-board";
+import { getPageAccess } from "@/server/auth/route-guards";
+import { AccessDenied } from "@/shared/components/crm/access-denied";
 import { Badge } from "@/shared/components/ui/badge";
 
 type PipelinePageProps = {
@@ -8,6 +10,12 @@ type PipelinePageProps = {
 };
 
 export default async function PipelinePage({ searchParams }: PipelinePageProps) {
+  const access = await getPageAccess("pipeline:read");
+
+  if (!access.allowed) {
+    return <AccessDenied description="Seu perfil não possui permissão para acessar o pipeline." />;
+  }
+
   const params = await searchParams;
   const filters = parsePipelineFilters(params);
   const data = await getPipelineBoard(filters);

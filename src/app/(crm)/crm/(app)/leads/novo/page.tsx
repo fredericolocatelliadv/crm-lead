@@ -2,9 +2,17 @@ import { createLead } from "@/features/leads/actions";
 import { LeadForm } from "@/features/leads/components/lead-form";
 import { getActiveLegalAreaOptions } from "@/features/leads/data/legal-areas";
 import { getLeadFormOptions } from "@/features/leads/data/lead-directory";
+import { getPageAccess } from "@/server/auth/route-guards";
+import { AccessDenied } from "@/shared/components/crm/access-denied";
 import { Badge } from "@/shared/components/ui/badge";
 
 export default async function NewLeadPage() {
+  const access = await getPageAccess("leads:write");
+
+  if (!access.allowed) {
+    return <AccessDenied description="Seu perfil não possui permissão para cadastrar leads." />;
+  }
+
   const [{ assignees, stages }, legalAreas] = await Promise.all([
     getLeadFormOptions(),
     getActiveLegalAreaOptions(),

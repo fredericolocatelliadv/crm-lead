@@ -73,7 +73,7 @@ const postSchema = z.object({
 async function assertBlogWriteAccess() {
   const [user, role] = await Promise.all([requireCurrentUser(), getCurrentUserRole()]);
 
-  if (!hasPermission(role, "crm:write")) {
+  if (!hasPermission(role, "blog:write")) {
     throw new Error("Permissão insuficiente.");
   }
 

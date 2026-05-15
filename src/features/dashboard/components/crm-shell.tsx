@@ -9,6 +9,7 @@ import { CrmNavLinks } from "@/features/dashboard/components/crm-nav-link";
 import { CrmPageHeading } from "@/features/dashboard/components/crm-page-heading";
 import { ProfileMenu } from "@/features/profile/components/profile-menu";
 import type { CurrentProfile } from "@/features/profile/types/profile";
+import type { UserRole } from "@/features/users/types/roles";
 import { ThemeToggle } from "@/shared/components/theme-toggle";
 import { Button } from "@/shared/components/ui/button";
 import { Separator } from "@/shared/components/ui/separator";
@@ -21,10 +22,12 @@ function SidebarContent({
   closeOnSelect = false,
   collapsed = false,
   onToggleCollapsed,
+  role,
 }: {
   closeOnSelect?: boolean;
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
+  role: UserRole;
 }) {
   return (
     <div className="flex h-full flex-col bg-background">
@@ -76,7 +79,7 @@ function SidebarContent({
             </span>
           </Button>
         ) : null}
-        <CrmNavLinks closeOnSelect={closeOnSelect} collapsed={collapsed} />
+        <CrmNavLinks closeOnSelect={closeOnSelect} collapsed={collapsed} role={role} />
       </nav>
 
       <div className={cn("border-t p-4", collapsed && "px-2")}>
@@ -129,7 +132,11 @@ export function CrmShell({
           sidebarCollapsed ? "w-20" : "w-72",
         )}
       >
-        <SidebarContent collapsed={sidebarCollapsed} onToggleCollapsed={toggleSidebar} />
+        <SidebarContent
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={toggleSidebar}
+          role={profile.role}
+        />
       </aside>
 
       <div
@@ -148,7 +155,7 @@ export function CrmShell({
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0">
               <SheetTitle className="sr-only">Menu principal do CRM</SheetTitle>
-              <SidebarContent closeOnSelect />
+              <SidebarContent closeOnSelect role={profile.role} />
             </SheetContent>
           </Sheet>
 

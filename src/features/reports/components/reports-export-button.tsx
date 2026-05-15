@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 
+import { statusLabels } from "@/features/leads/types/lead";
 import type { ReportsOverview } from "@/features/reports/data/reports-overview";
 import { Button } from "@/shared/components/ui/button";
 
@@ -18,7 +19,7 @@ export function ReportsExportButton({ data }: { data: ReportsOverview }) {
         const link = document.createElement("a");
 
         link.href = url;
-        link.download = `relatorios-crm-${data.period}.csv`;
+        link.download = `relatorio-leads-${data.period}.csv`;
         link.click();
         URL.revokeObjectURL(url);
       }}
@@ -33,12 +34,38 @@ function buildCsv(data: ReportsOverview) {
   const rows = [
     ["Seção", "Indicador", "Valor"],
     ...data.metrics.map((metric) => ["Resumo", metric.label, metric.value]),
-    ...data.sources.map((item) => ["Origem", item.label, String(item.value)]),
-    ...data.legalAreas.map((item) => ["Área jurídica", item.label, String(item.value)]),
-    ...data.responsible.map((item) => [
-      "Responsável",
+    ...data.sourcePerformance.map((item) => [
+      "Origem",
       item.label,
-      `${item.leads} leads / ${item.conversations} atendimentos`,
+      `${item.leads} leads / ${item.converted} convertidos / ${item.conversionRate}`,
+    ]),
+    ...data.utmSourcePerformance.map((item) => [
+      "Canal UTM",
+      item.label,
+      `${item.leads} leads / ${item.converted} convertidos / ${item.conversionRate}`,
+    ]),
+    ...data.campaignPerformance.map((item) => [
+      "Campanha",
+      item.label,
+      `${item.leads} leads / ${item.converted} convertidos / ${item.conversionRate}`,
+    ]),
+    ...data.areaPerformance.map((item) => [
+      "Área jurídica",
+      item.label,
+      `${item.leads} leads / ${item.converted} convertidos / ${item.conversionRate}`,
+    ]),
+    ...data.pipeline.map((item) => ["Funil", item.label, String(item.value)]),
+    ...data.leads.map((lead) => [
+      "Lead",
+      lead.name,
+      [
+        `status: ${statusLabels[lead.status]}`,
+        `origem: ${lead.source || "não informada"}`,
+        `campanha: ${lead.campaign || "sem campanha"}`,
+        `área: ${lead.legalArea || "não informada"}`,
+        `etapa: ${lead.stageName || "sem etapa"}`,
+        `responsável: ${lead.assigneeName || "sem responsável"}`,
+      ].join(" | "),
     ]),
   ];
 

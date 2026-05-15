@@ -4,6 +4,9 @@ import Link from "next/link";
 import { LeadListFilters } from "@/features/leads/components/lead-list-filters";
 import { LeadListTable } from "@/features/leads/components/lead-list-table";
 import { getLeadList, parseLeadFilters } from "@/features/leads/data/lead-directory";
+import { hasPermission } from "@/server/auth/permissions";
+import { getPageAccess } from "@/server/auth/route-guards";
+import { AccessDenied } from "@/shared/components/crm/access-denied";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 
@@ -12,9 +15,16 @@ type LeadsPageProps = {
 };
 
 export default async function LeadsPage({ searchParams }: LeadsPageProps) {
+  const access = await getPageAccess("leads:read");
+
+  if (!access.allowed) {
+    return <AccessDenied description="Seu perfil não possui permissão para acessar leads." />;
+  }
+
   const params = await searchParams;
   const filters = parseLeadFilters(params);
   const data = await getLeadList(filters);
+  const canCreateLead = hasPermission(access.role, "leads:write");
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -31,12 +41,14 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           </p>
         </div>
 
-        <Button asChild>
-          <Link href="/crm/leads/novo">
-            <Plus className="h-4 w-4" />
-            Novo lead
-          </Link>
-        </Button>
+        {canCreateLead ? (
+          <Button asChild>
+            <Link href="/crm/leads/novo">
+              <Plus className="h-4 w-4" />
+              Novo lead
+            </Link>
+          </Button>
+        ) : null}
       </section>
 
       <LeadListFilters

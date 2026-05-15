@@ -107,7 +107,7 @@ export async function getAiAssistantSettings(
 export async function getAiAssistantManagementData() {
   const role = await getCurrentUserRole();
 
-  if (!hasPermission(role, "settings:manage")) {
+  if (!hasPermission(role, "ai:manage")) {
     throw new Error("Permissão insuficiente para configurar a IA.");
   }
 

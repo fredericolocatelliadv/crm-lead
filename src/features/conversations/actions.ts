@@ -15,6 +15,7 @@ import {
   sendEvolutionMediaMessage,
   sendEvolutionTextMessage,
 } from "@/server/integrations/evolution/client";
+import { createAdminClient } from "@/server/supabase/admin";
 import { createClient } from "@/server/supabase/server";
 
 export type ConversationActionState = {
@@ -217,6 +218,54 @@ async function registerConversationEvent(params: {
   }
 }
 
+async function syncLeadAssigneeFromConversation(params: {
+  actorId: string;
+  assigneeId: string | null;
+  leadId: string | null;
+  reason: string;
+}) {
+  if (!params.leadId) return;
+
+  const supabase = createAdminClient();
+  const { data: lead, error: leadError } = await supabase
+    .from("leads")
+    .select("assignee_id")
+    .eq("id", params.leadId)
+    .maybeSingle();
+
+  if (leadError) {
+    throw new Error("Não foi possível validar o responsável do lead.");
+  }
+
+  if (!lead || lead.assignee_id === params.assigneeId) return;
+
+  const { error: updateError } = await supabase
+    .from("leads")
+    .update({
+      assignee_id: params.assigneeId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.leadId);
+
+  if (updateError) {
+    throw new Error("Não foi possível sincronizar o responsável do lead.");
+  }
+
+  await supabase.from("lead_events").insert({
+    actor_id: params.actorId,
+    description: params.assigneeId
+      ? "Responsável do lead sincronizado com o atendimento."
+      : "Responsável do lead removido pelo atendimento.",
+    event_type: "lead_assignee_synced",
+    lead_id: params.leadId,
+    metadata: {
+      assigneeId: params.assigneeId,
+      previousAssigneeId: lead.assignee_id,
+      reason: params.reason,
+    },
+  });
+}
+
 async function sendOpenAiSessionsToHumanReview(
   conversationId: string,
   metadata: Record<string, unknown>,
@@ -244,6 +293,8 @@ function revalidateConversationPaths(conversationId: string, leadId?: string | n
   revalidatePath(`/crm/conversas/${conversationId}`);
 
   if (leadId) {
+    revalidatePath("/crm/leads");
+    revalidatePath("/crm/pipeline");
     revalidatePath(`/crm/leads/${leadId}`);
   }
 }
@@ -483,10 +534,11 @@ export async function sendConversationReply(
     }
   }
 
+  const nextAssigneeId = conversation.assigned_to ?? user.id;
   const { error: updateError } = await supabase
     .from("conversations")
     .update({
-      assigned_to: conversation.assigned_to ?? user.id,
+      assigned_to: nextAssigneeId,
       last_message_at: now,
       status: "waiting_client",
       updated_at: now,
@@ -499,6 +551,13 @@ export async function sendConversationReply(
       ok: false,
     };
   }
+
+  await syncLeadAssigneeFromConversation({
+    actorId: user.id,
+    assigneeId: nextAssigneeId,
+    leadId: conversation.lead_id,
+    reason: "conversation_reply",
+  });
 
   await registerConversationEvent({
     actorId: user.id,
@@ -624,15 +683,24 @@ export async function retryConversationMessage(messageId: string) {
       messageId: message.id,
     });
 
+    const nextAssigneeId = conversation.assigned_to ?? user.id;
+
     await supabase
       .from("conversations")
       .update({
-        assigned_to: conversation.assigned_to ?? user.id,
+        assigned_to: nextAssigneeId,
         last_message_at: now,
         status: "waiting_client",
         updated_at: now,
       })
       .eq("id", conversation.id);
+
+    await syncLeadAssigneeFromConversation({
+      actorId: user.id,
+      assigneeId: nextAssigneeId,
+      leadId: conversation.lead_id,
+      reason: "conversation_message_retry",
+    });
 
     await registerConversationEvent({
       actorId: user.id,
@@ -844,6 +912,13 @@ export async function transferConversation(
     });
   }
 
+  await syncLeadAssigneeFromConversation({
+    actorId: user.id,
+    assigneeId: parsed.data.assignedTo,
+    leadId: conversation.lead_id,
+    reason: "conversation_transferred",
+  });
+
   await registerConversationEvent({
     actorId: user.id,
     description: "Atendimento transferido.",
@@ -897,6 +972,13 @@ export async function assumeConversation(
   await sendOpenAiSessionsToHumanReview(conversation.id, {
     actorId: user.id,
     pausedAt: now,
+    reason: "conversation_assumed",
+  });
+
+  await syncLeadAssigneeFromConversation({
+    actorId: user.id,
+    assigneeId: user.id,
+    leadId: conversation.lead_id,
     reason: "conversation_assumed",
   });
 

@@ -5,6 +5,8 @@ import {
   getCustomerById,
 } from "@/features/customers/data/customer-directory";
 import { getActiveLegalAreaOptions } from "@/features/leads/data/legal-areas";
+import { getPageAccess } from "@/server/auth/route-guards";
+import { AccessDenied } from "@/shared/components/crm/access-denied";
 import { Badge } from "@/shared/components/ui/badge";
 
 type EditCustomerPageProps = {
@@ -14,6 +16,12 @@ type EditCustomerPageProps = {
 };
 
 export default async function EditCustomerPage({ params }: EditCustomerPageProps) {
+  const access = await getPageAccess("customers:write");
+
+  if (!access.allowed) {
+    return <AccessDenied description="Seu perfil não possui permissão para editar clientes convertidos." />;
+  }
+
   const { id } = await params;
   const [data, legalAreas] = await Promise.all([
     getCustomerById(id),

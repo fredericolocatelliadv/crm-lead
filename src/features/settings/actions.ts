@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getCurrentUserRole } from "@/features/users/data/user-directory";
 import { hasPermission } from "@/server/auth/permissions";
 import { requireCurrentUser } from "@/server/auth/session";
+import { createAdminClient } from "@/server/supabase/admin";
 import { createClient } from "@/server/supabase/server";
 
 type SiteContentTable = "team_members" | "testimonials" | "faqs";
@@ -212,7 +213,17 @@ const legalAreaSchema = z.object({
 async function assertContentWriteAccess() {
   const [user, role] = await Promise.all([requireCurrentUser(), getCurrentUserRole()]);
 
-  if (!hasPermission(role, "crm:write")) {
+  if (!hasPermission(role, "settings:manage")) {
+    throw new Error("Permissão insuficiente.");
+  }
+
+  return user;
+}
+
+async function assertMarketingSettingsAccess() {
+  const [user, role] = await Promise.all([requireCurrentUser(), getCurrentUserRole()]);
+
+  if (!hasPermission(role, "marketing:manage")) {
     throw new Error("Permissão insuficiente.");
   }
 
@@ -402,7 +413,7 @@ export async function updateMarketingSettings(
   _previousState: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
-  const user = await assertSiteSettingsAccess();
+  const user = await assertMarketingSettingsAccess();
   const parsed = marketingSettingsSchema.safeParse({
     cookieConsentEnabled: formData.get("cookieConsentEnabled") === "on",
     googleAnalyticsId: formData.get("googleAnalyticsId"),
@@ -425,7 +436,7 @@ export async function updateMarketingSettings(
     };
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { error } = await supabase.from("site_settings").upsert({
     cookie_consent_enabled: parsed.data.cookieConsentEnabled,
     google_analytics_id: parsed.data.googleAnalyticsId,

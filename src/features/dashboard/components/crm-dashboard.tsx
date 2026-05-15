@@ -158,6 +158,22 @@ export async function CrmDashboard({ period }: { period: DashboardPeriod }) {
                       <span className="text-xs text-muted-foreground">
                         {formatDateTime(lead.createdAt)}
                       </span>
+                      {lead.conversationId ? (
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Abrir conversa"
+                        >
+                          <Link
+                            href={`/crm/conversas/${lead.conversationId}`}
+                            aria-label={`Abrir conversa de ${lead.name}`}
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -193,9 +209,25 @@ export async function CrmDashboard({ period }: { period: DashboardPeriod }) {
                           {conversation.leadLegalArea || "Área não informada"}
                         </p>
                       </div>
-                      <Badge variant={toneMap[getPriorityTone(conversation.priority)]}>
-                        {getPriorityLabel(conversation.priority)}
-                      </Badge>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant={toneMap[getPriorityTone(conversation.priority)]}>
+                          {getPriorityLabel(conversation.priority)}
+                        </Badge>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Abrir conversa"
+                        >
+                          <Link
+                            href={`/crm/conversas/${conversation.id}`}
+                            aria-label={`Abrir conversa de ${conversation.leadName || "contato sem nome"}`}
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">

@@ -21,6 +21,13 @@ O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, S
 - correção do aviso do React sobre formulário com Server Action;
 - commit enviado ao GitHub: `9935316 Add CRM user profile management`.
 
+Próxima entrega planejada:
+
+- evoluir `/crm/usuarios` para cadastro real de usuários internos;
+- criar perfis profissionais para Administrador, Advogado e Especialista de Marketing;
+- proteger menu, rotas, Server Actions e policies conforme permissões;
+- permitir que advogado seja vinculado opcionalmente à equipe exibida no site.
+
 ## Validações Recentes
 
 - [x] `npm.cmd run typecheck`
@@ -89,6 +96,138 @@ O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, S
 - [x] Remover `encType` manual de formulário com Server Action.
 - [ ] Fazer teste visual autenticado de troca real de foto no CRM.
 
+## Usuários e Permissões Profissionais
+
+Objetivo: transformar o menu `Usuários` em uma área administrativa real para cadastrar, ativar, inativar e controlar acessos internos do escritório, sem criar módulos fora do escopo comercial do CRM.
+
+### Perfis Oficiais
+
+- [x] Manter `Administrador` como perfil de controle total do sistema.
+- [x] Criar perfil `Advogado` para operação jurídica e comercial.
+- [x] Criar perfil `Especialista de Marketing` para conteúdo, campanha e análise de captação.
+- [x] Remover da interface pública do CRM os perfis antigos `Gestor` e `Atendente`, mantendo compatibilidade técnica se ainda existirem registros no banco.
+- [x] Definir textos claros no painel explicando o que cada perfil pode acessar, sem linguagem técnica.
+
+### Permissões por Perfil
+
+Administrador:
+
+- [x] Pode acessar Dashboard, Leads, Pipeline, Conversas, WhatsApp, IA, Clientes, Blog, Relatórios, Usuários e Configurações.
+- [x] Pode cadastrar, editar, ativar, inativar e alterar perfil de usuários.
+- [x] Pode configurar IA, WhatsApp, SEO, marketing, site e regras operacionais.
+- [x] Não pode remover o próprio acesso de administrador.
+- [x] Não pode deixar o sistema sem pelo menos um administrador ativo.
+
+Advogado:
+
+- [x] Pode acessar Dashboard.
+- [x] Pode acessar Leads.
+- [x] Pode acessar Pipeline.
+- [x] Pode acessar Conversas.
+- [x] Pode acessar WhatsApp em modo operacional permitido, sem ações destrutivas de instância.
+- [x] Pode acessar Clientes.
+- [x] Pode acessar Blog, criar e editar publicações.
+- [x] Pode acessar Relatórios.
+- [x] Não pode acessar IA.
+- [x] Não pode acessar Configurações do sistema.
+- [x] Não pode acessar Usuários e permissões.
+- [x] Pode ser marcado como membro da equipe do site.
+- [x] Quando marcado para aparecer no site, deve preencher dados públicos como cargo, OAB, bio, foto, e-mail, WhatsApp, Instagram, LinkedIn e posição.
+- [x] Quando não marcado para aparecer no site, continua sendo apenas usuário interno do CRM.
+
+Especialista de Marketing:
+
+- [x] Pode acessar Dashboard.
+- [x] Pode acessar Leads para análise de origem e campanha.
+- [x] Pode acessar Blog, criar e editar publicações.
+- [x] Pode acessar Relatórios.
+- [x] Pode acessar somente a parte de Marketing e SEO das Configurações.
+- [x] Não pode acessar Conversas.
+- [x] Não pode acessar WhatsApp.
+- [x] Não pode acessar IA.
+- [x] Não pode acessar Clientes.
+- [x] Não pode acessar Usuários e permissões.
+- [x] Não pode alterar configurações operacionais sensíveis do escritório.
+- [x] Não precisa ter vínculo com equipe exibida no site.
+
+### Banco de Dados e Auth
+
+- [x] Verificar enum `app_role` atual no Supabase antes de alterar.
+- [x] Criar migration para incluir `lawyer` e `marketing` no enum `app_role`, se ainda não existirem.
+- [x] Manter `admin` como role obrigatória para gerenciamento de usuários.
+- [x] Avaliar se `manager` e `attendant` ficam como legado técnico ou se serão migrados para os novos perfis.
+- [x] Usar Supabase Auth Admin somente em código server-side para criar usuários.
+- [x] Nunca expor service role no navegador.
+- [x] Criar usuário com senha inicial definida pelo administrador, sem depender de convite por e-mail.
+- [x] Confirmar e-mail automaticamente no cadastro interno, pois o acesso será controlado pela administração do CRM.
+- [x] Permitir redefinir senha na edição do usuário sem armazenar senha no banco do CRM.
+- [x] Criar ou atualizar registro em `profiles` ao cadastrar usuário.
+- [x] Criar ou atualizar registro em `user_roles` ao cadastrar ou alterar perfil.
+- [x] Criar campo ou vínculo seguro para relacionar usuário advogado com `team_members`, sem duplicar dados desnecessariamente.
+- [x] Garantir RLS para leitura e alteração de usuários apenas por administrador.
+- [x] Garantir que advogado e marketing não consigam alterar permissões via requisição direta.
+
+### Tela `/crm/usuarios`
+
+- [x] Adicionar botão `Novo usuário`.
+- [x] Criar formulário em modal, drawer ou página dedicada, sem colocar formulário lado a lado com a tabela.
+- [x] Campos mínimos: nome completo, e-mail, senha inicial, telefone opcional, perfil, status ativo.
+- [x] Para edição, permitir nova senha opcional com confirmação.
+- [x] Para advogado, exibir seção opcional `Exibir este advogado no site`.
+- [x] Para advogado exibido no site, permitir preencher OAB, cargo, bio, foto, e-mail público, WhatsApp, Instagram, LinkedIn e posição.
+- [x] Para marketing, ocultar campos de equipe do site.
+- [x] Listar usuários com nome, e-mail, perfil, status, data de criação e ações.
+- [x] Permitir ativar e inativar usuário com confirmação profissional.
+- [x] Permitir alterar perfil com confirmação profissional.
+- [x] Mostrar avisos simples para impactos de cada ação, em linguagem de cliente leigo.
+- [x] Manter estados vazios e erros em português correto.
+
+### Menu, Rotas e Ações
+
+- [x] Filtrar itens do menu conforme permissões do perfil logado.
+- [x] Proteger páginas no servidor, não apenas esconder menu.
+- [x] Bloquear `/crm/ia` para Advogado e Marketing.
+- [x] Bloquear `/crm/configuracoes` geral para Advogado.
+- [x] Permitir ao Marketing apenas a área de Marketing e SEO, sem acesso a configurações operacionais.
+- [x] Bloquear `/crm/usuarios` para Advogado e Marketing.
+- [x] Bloquear ações críticas de WhatsApp para Advogado quando envolver excluir, desconectar, desativar ou reconfigurar instância.
+- [x] Bloquear Server Actions por permissão real, não apenas por estado visual.
+- [x] Revisar policies de `blog_posts`, `team_members`, `site_settings`, `profiles` e `user_roles` para refletir os novos perfis.
+
+### Integração com Equipe do Site
+
+- [x] Reaproveitar `team_members` para exibição pública de advogados.
+- [x] Criar vínculo entre usuário advogado e membro da equipe quando necessário.
+- [x] Permitir editar dados públicos do advogado a partir do cadastro de usuário.
+- [x] Manter a seção `Equipe` do site consumindo apenas membros ativos.
+- [x] Não criar membro de equipe para Especialista de Marketing.
+- [x] Não obrigar advogado interno a aparecer no site.
+
+### Validação da Entrega
+
+- [ ] Testar cadastro de Administrador.
+- [ ] Testar cadastro de Advogado sem exibição no site.
+- [ ] Testar cadastro de Advogado com exibição no site.
+- [ ] Testar cadastro de Especialista de Marketing.
+- [ ] Testar que Advogado não vê nem acessa IA, Configurações e Usuários.
+- [ ] Testar que Marketing não vê nem acessa Conversas, WhatsApp, IA, Clientes e Usuários.
+- [ ] Testar que Marketing acessa Blog, Relatórios e Marketing/SEO.
+- [ ] Testar que Administrador continua acessando tudo.
+- [ ] Testar tentativa direta por URL em páginas bloqueadas.
+- [ ] Testar tentativa direta de Server Action sem permissão.
+- [x] Rodar `npm.cmd run typecheck`.
+- [x] Rodar `npm.cmd run lint`.
+- [x] Rodar `npm.cmd run build`.
+- [x] Validar RLS e policies no Supabase após migration.
+- [x] Rodar advisors do Supabase se a mudança tocar policies, roles ou grants.
+- [x] Testar criação direta no Supabase Auth com senha e remoção de usuário temporário.
+
+Observações dos advisors em 14/05/2026:
+- Segurança: `site_whatsapp_intents` está com RLS ativo e sem policy pública; manter assim se a tabela continuar sendo usada apenas por fluxo server-side/service role, ou criar policies explícitas quando houver acesso autenticado.
+- Segurança: leaked password protection do Supabase Auth está desativado; ativar antes de produção.
+- Performance: há foreign keys sem índice em `ai_assistant_settings.updated_by`, `conversations.ai_paused_by` e `site_whatsapp_intents.contact_id/lead_id`; revisar em migration de performance.
+- Performance: índices recém-criados e operacionais aparecem como não utilizados por falta de volume/uso real; não remover agora sem dados de produção.
+
 ## WhatsApp
 
 - [x] Integração server-side com Evolution API.
@@ -106,6 +245,8 @@ O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, S
 - [x] Não criar lead novo para mensagem `fromMe`.
 - [x] Persistir mensagem antes de IA ou automação.
 - [x] Vincular atendimento iniciado pelo site ao lead real quando o webhook receber o protocolo do WhatsApp.
+- [x] Sincronizar responsável da conversa com o lead vinculado ao assumir, transferir ou responder manualmente.
+- [x] Corrigir leads existentes sem responsável quando já havia conversa atribuída.
 - [ ] Testar falha da Evolution API sem perder mensagem ou histórico.
 - [ ] Testar cliente convertido falando novamente.
 - [ ] Testar lead perdido voltando.

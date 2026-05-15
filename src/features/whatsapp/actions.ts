@@ -32,7 +32,7 @@ export type WhatsAppActionState = {
 async function assertWhatsAppManageAccess() {
   const [user, role] = await Promise.all([requireCurrentUser(), getCurrentUserRole()]);
 
-  if (!hasPermission(role, "crm:write")) {
+  if (!hasPermission(role, "whatsapp:manage")) {
     throw new Error("Permissão insuficiente.");
   }
 

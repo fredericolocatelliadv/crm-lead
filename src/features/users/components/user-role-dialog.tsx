@@ -6,8 +6,8 @@ import { toast } from "sonner";
 
 import { updateUserRole } from "@/features/users/actions";
 import {
+  publicAssignableRoles,
   roleLabels,
-  userRoles,
   type UserRole,
 } from "@/features/users/types/roles";
 import { Button } from "@/shared/components/ui/button";
@@ -42,7 +42,11 @@ export function UserRoleDialog({
   userName,
 }: UserRoleDialogProps) {
   const [open, setOpen] = useState(false);
-  const [role, setRole] = useState<UserRole>(currentRole);
+  const [role, setRole] = useState<UserRole>(
+    publicAssignableRoles.includes(currentRole as (typeof publicAssignableRoles)[number])
+      ? currentRole
+      : "lawyer",
+  );
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit() {
@@ -85,7 +89,7 @@ export function UserRoleDialog({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {userRoles.map((item) => (
+              {publicAssignableRoles.map((item) => (
                 <SelectItem key={item} value={item}>
                   {roleLabels[item]}
                 </SelectItem>

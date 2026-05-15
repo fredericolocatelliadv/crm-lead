@@ -96,6 +96,72 @@ export type SiteManagementData = {
   testimonials: TestimonialItem[];
 };
 
+function stringOrNull(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+function stringOrDefault(value: unknown, fallback: string) {
+  return typeof value === "string" ? value : fallback;
+}
+
+function booleanOrDefault(value: unknown, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function mapSiteSettings(data: Record<string, unknown> | null | undefined): SiteSettings {
+  return {
+    address: stringOrNull(data?.address),
+    cookieConsentEnabled: booleanOrDefault(data?.cookie_consent_enabled, false),
+    email: stringOrNull(data?.email),
+    facebook: stringOrNull(data?.facebook),
+    googleAnalyticsId: stringOrNull(data?.google_analytics_id),
+    googleSearchConsoleVerification: stringOrNull(data?.google_search_console_verification),
+    googleTagManagerId: stringOrNull(data?.google_tag_manager_id),
+    instagram: stringOrNull(data?.instagram),
+    legalDocumentsUpdatedAt: stringOrNull(data?.legal_documents_updated_at),
+    legalDocumentsVersion: stringOrDefault(data?.legal_documents_version, "1.0"),
+    linkedin: stringOrNull(data?.linkedin),
+    metaDomainVerification: stringOrNull(data?.meta_domain_verification),
+    metaPixelId: stringOrNull(data?.meta_pixel_id),
+    privacyContactEmail: stringOrNull(data?.privacy_contact_email),
+    privacyPolicyContent: stringOrDefault(data?.privacy_policy_content, ""),
+    seoDescription: stringOrNull(data?.seo_description),
+    seoImageUrl: stringOrNull(data?.seo_image_url),
+    seoTitle: stringOrNull(data?.seo_title),
+    siteUrl: stringOrNull(data?.site_url),
+    termsOfUseContent: stringOrDefault(data?.terms_of_use_content, ""),
+    cookiePolicyContent: stringOrDefault(data?.cookie_policy_content, ""),
+    trackingEnabled: booleanOrDefault(data?.tracking_enabled, false),
+    whatsapp: stringOrNull(data?.whatsapp),
+    youtube: stringOrNull(data?.youtube),
+  };
+}
+
+export async function getMarketingSettingsData(): Promise<SiteManagementData> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select(
+      "whatsapp,email,address,instagram,linkedin,facebook,youtube,site_url,seo_title,seo_description,seo_image_url,tracking_enabled,cookie_consent_enabled,google_tag_manager_id,google_analytics_id,meta_pixel_id,google_search_console_verification,meta_domain_verification,privacy_contact_email,legal_documents_version,legal_documents_updated_at,privacy_policy_content,terms_of_use_content,cookie_policy_content",
+    )
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Não foi possível carregar SEO e marketing.");
+  }
+
+  return {
+    businessHours: [],
+    faqs: [],
+    legalAreas: [],
+    quickReplies: [],
+    settings: mapSiteSettings(data),
+    teamMembers: [],
+    testimonials: [],
+  };
+}
+
 export async function getSiteManagementData(): Promise<SiteManagementData> {
   const supabase = await createClient();
   const [
@@ -171,33 +237,7 @@ export async function getSiteManagementData(): Promise<SiteManagementData> {
       title: reply.title,
       updatedAt: reply.updated_at,
     })),
-    settings: {
-      address: settingsResult.data?.address ?? null,
-      cookieConsentEnabled: settingsResult.data?.cookie_consent_enabled ?? false,
-      email: settingsResult.data?.email ?? null,
-      facebook: settingsResult.data?.facebook ?? null,
-      googleAnalyticsId: settingsResult.data?.google_analytics_id ?? null,
-      googleSearchConsoleVerification:
-        settingsResult.data?.google_search_console_verification ?? null,
-      googleTagManagerId: settingsResult.data?.google_tag_manager_id ?? null,
-      instagram: settingsResult.data?.instagram ?? null,
-      legalDocumentsUpdatedAt: settingsResult.data?.legal_documents_updated_at ?? null,
-      legalDocumentsVersion: settingsResult.data?.legal_documents_version ?? "1.0",
-      linkedin: settingsResult.data?.linkedin ?? null,
-      metaDomainVerification: settingsResult.data?.meta_domain_verification ?? null,
-      metaPixelId: settingsResult.data?.meta_pixel_id ?? null,
-      privacyContactEmail: settingsResult.data?.privacy_contact_email ?? null,
-      privacyPolicyContent: settingsResult.data?.privacy_policy_content ?? "",
-      seoDescription: settingsResult.data?.seo_description ?? null,
-      seoImageUrl: settingsResult.data?.seo_image_url ?? null,
-      seoTitle: settingsResult.data?.seo_title ?? null,
-      siteUrl: settingsResult.data?.site_url ?? null,
-      termsOfUseContent: settingsResult.data?.terms_of_use_content ?? "",
-      cookiePolicyContent: settingsResult.data?.cookie_policy_content ?? "",
-      trackingEnabled: settingsResult.data?.tracking_enabled ?? false,
-      whatsapp: settingsResult.data?.whatsapp ?? null,
-      youtube: settingsResult.data?.youtube ?? null,
-    },
+    settings: mapSiteSettings(settingsResult.data),
     teamMembers: (teamResult.data ?? []) as TeamMemberItem[],
     testimonials: (testimonialsResult.data ?? []) as TestimonialItem[],
   };

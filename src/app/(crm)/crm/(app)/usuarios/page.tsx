@@ -1,10 +1,18 @@
 import { ShieldCheck, Users } from "lucide-react";
 
 import { RoleBadge } from "@/features/users/components/role-badge";
+import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import { UserRoleDialog } from "@/features/users/components/user-role-dialog";
+import { UserStatusButton } from "@/features/users/components/user-status-button";
 import { getUserDirectory } from "@/features/users/data/user-directory";
-import { roleLabels, userRoles, type UserRole } from "@/features/users/types/roles";
+import {
+  publicAssignableRoles,
+  roleLabels,
+  type UserRole,
+} from "@/features/users/types/roles";
 import { hasPermission } from "@/server/auth/permissions";
+import { getPageAccess } from "@/server/auth/route-guards";
+import { AccessDenied } from "@/shared/components/crm/access-denied";
 import { EmptyState } from "@/shared/components/crm/page-state";
 import { Badge } from "@/shared/components/ui/badge";
 import {
@@ -25,8 +33,10 @@ import {
 
 const roleDescriptions: Record<UserRole, string> = {
   admin: "Controle de acesso, configurações e operação completa.",
-  manager: "Acompanha a operação e atua nos fluxos comerciais.",
-  attendant: "Atende leads, conversas e rotinas comerciais.",
+  attendant: "Perfil legado para atendimento comercial.",
+  lawyer: "Atende leads, conversas, pipeline, clientes, blog e relatórios.",
+  manager: "Perfil legado para gestão operacional.",
+  marketing: "Cuida de conteúdo, campanhas, SEO e análise de captação.",
 };
 
 function formatDate(value: string) {
@@ -38,6 +48,12 @@ function formatDate(value: string) {
 }
 
 export default async function UsersPage() {
+  const access = await getPageAccess("users:manage");
+
+  if (!access.allowed) {
+    return <AccessDenied description="Somente administradores podem gerenciar usuários e permissões." />;
+  }
+
   const { currentUserId, currentUserRole, users } = await getUserDirectory();
   const canManageUsers = hasPermission(currentUserRole, "users:manage");
 
@@ -56,13 +72,16 @@ export default async function UsersPage() {
           </p>
         </div>
 
-        <div className="rounded-md border bg-card px-4 py-3 text-sm text-muted-foreground">
-          Seu perfil: <span className="font-medium text-foreground">{roleLabels[currentUserRole]}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="rounded-md border bg-card px-4 py-3 text-sm text-muted-foreground">
+            Seu perfil: <span className="font-medium text-foreground">{roleLabels[currentUserRole]}</span>
+          </div>
+          {canManageUsers ? <UserFormDialog /> : null}
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        {userRoles.map((role) => (
+        {publicAssignableRoles.map((role) => (
           <Card key={role}>
             <CardHeader>
               <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-md border bg-muted">
@@ -92,6 +111,7 @@ export default async function UsersPage() {
                 <TableRow>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Perfil</TableHead>
+                  <TableHead>Equipe do site</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Criado em</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -119,6 +139,13 @@ export default async function UsersPage() {
                         <RoleBadge role={user.role} />
                       </TableCell>
                       <TableCell>
+                        {user.teamMemberId ? (
+                          <Badge variant="info">Exibido no site</Badge>
+                        ) : (
+                          <Badge variant="neutral">Interno</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={user.active ? "success" : "neutral"}>
                           {user.active ? "Ativo" : "Inativo"}
                         </Badge>
@@ -127,12 +154,21 @@ export default async function UsersPage() {
                         {formatDate(user.createdAt)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <UserRoleDialog
-                          currentRole={user.role}
-                          disabled={!canManageUsers || isCurrentUser}
-                          userId={user.id}
-                          userName={displayName}
-                        />
+                        <div className="flex justify-end gap-2">
+                          <UserFormDialog user={user} />
+                          <UserRoleDialog
+                            currentRole={user.role}
+                            disabled={!canManageUsers || isCurrentUser}
+                            userId={user.id}
+                            userName={displayName}
+                          />
+                          <UserStatusButton
+                            active={user.active}
+                            disabled={!canManageUsers || isCurrentUser}
+                            userId={user.id}
+                            userName={displayName}
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

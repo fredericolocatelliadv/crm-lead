@@ -21,6 +21,8 @@ import { LegalDocumentsSettingsForm } from "@/features/settings/components/legal
 import { MarketingSeoSettingsForm } from "@/features/settings/components/marketing-seo-settings-form";
 import { SiteSettingsForm } from "@/features/settings/components/site-settings-form";
 import type { SiteManagementData } from "@/features/settings/data/site-management";
+import type { UserRole } from "@/features/users/types/roles";
+import { hasPermission } from "@/server/auth/permissions";
 import { EmptyState } from "@/shared/components/crm/page-state";
 import { Badge } from "@/shared/components/ui/badge";
 import {
@@ -40,7 +42,17 @@ import {
 } from "@/shared/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 
-export function SiteManagementView({ data }: { data: SiteManagementData }) {
+export function SiteManagementView({
+  data,
+  role,
+}: {
+  data: SiteManagementData;
+  role: UserRole;
+}) {
+  const canManageMarketing = hasPermission(role, "marketing:manage");
+  const canManageSettings = hasPermission(role, "settings:manage");
+  const defaultTab = canManageSettings ? "contato" : "marketing";
+
   return (
     <div className="flex w-full flex-col gap-6">
       <section>
@@ -56,19 +68,20 @@ export function SiteManagementView({ data }: { data: SiteManagementData }) {
         </p>
       </section>
 
-      <Tabs defaultValue="contato" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-md border bg-card p-1">
-          <TabsTrigger value="contato">Contato e redes</TabsTrigger>
-          <TabsTrigger value="marketing">Marketing e SEO</TabsTrigger>
-          <TabsTrigger value="documentos">Documentos legais</TabsTrigger>
-          <TabsTrigger value="equipe">Equipe</TabsTrigger>
-          <TabsTrigger value="depoimentos">Depoimentos</TabsTrigger>
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
-          <TabsTrigger value="areas">Áreas jurídicas</TabsTrigger>
-          <TabsTrigger value="respostas">Respostas rápidas</TabsTrigger>
-          <TabsTrigger value="horarios">Horários</TabsTrigger>
+          {canManageSettings ? <TabsTrigger value="contato">Contato e redes</TabsTrigger> : null}
+          {canManageMarketing ? <TabsTrigger value="marketing">Marketing e SEO</TabsTrigger> : null}
+          {canManageSettings ? <TabsTrigger value="documentos">Documentos legais</TabsTrigger> : null}
+          {canManageSettings ? <TabsTrigger value="equipe">Equipe</TabsTrigger> : null}
+          {canManageSettings ? <TabsTrigger value="depoimentos">Depoimentos</TabsTrigger> : null}
+          {canManageSettings ? <TabsTrigger value="faq">FAQ</TabsTrigger> : null}
+          {canManageSettings ? <TabsTrigger value="areas">Áreas jurídicas</TabsTrigger> : null}
+          {canManageSettings ? <TabsTrigger value="respostas">Respostas rápidas</TabsTrigger> : null}
+          {canManageSettings ? <TabsTrigger value="horarios">Horários</TabsTrigger> : null}
         </TabsList>
 
+        {canManageSettings ? (
         <TabsContent value="contato" className="mt-6">
           <Card>
             <CardHeader>
@@ -82,7 +95,9 @@ export function SiteManagementView({ data }: { data: SiteManagementData }) {
             </CardContent>
           </Card>
         </TabsContent>
+        ) : null}
 
+        {canManageMarketing ? (
         <TabsContent value="marketing" className="mt-6">
           <Card>
             <CardHeader>
@@ -97,7 +112,9 @@ export function SiteManagementView({ data }: { data: SiteManagementData }) {
             </CardContent>
           </Card>
         </TabsContent>
+        ) : null}
 
+        {canManageSettings ? (
         <TabsContent value="documentos" className="mt-6">
           <Card>
             <CardHeader>
@@ -111,7 +128,9 @@ export function SiteManagementView({ data }: { data: SiteManagementData }) {
             </CardContent>
           </Card>
         </TabsContent>
+        ) : null}
 
+        {canManageSettings ? (
         <TabsContent value="equipe" className="mt-6">
           <ContentCard
             title="Equipe"
@@ -164,7 +183,10 @@ export function SiteManagementView({ data }: { data: SiteManagementData }) {
             )}
           </ContentCard>
         </TabsContent>
+        ) : null}
 
+        {canManageSettings ? (
+          <>
         <TabsContent value="depoimentos" className="mt-6">
           <ContentCard
             title="Depoimentos"
@@ -379,6 +401,8 @@ export function SiteManagementView({ data }: { data: SiteManagementData }) {
             </CardContent>
           </Card>
         </TabsContent>
+          </>
+        ) : null}
       </Tabs>
     </div>
   );
