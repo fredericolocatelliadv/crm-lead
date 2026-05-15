@@ -140,7 +140,7 @@ Requisitos:
 - reaproveitamento de conversa por contato e canal;
 - envio humano de mensagens pelo CRM;
 - recebimento e envio de texto, imagem e áudio;
-- transcrição server-side de áudio recebido para permitir triagem pela IA;
+- transcrição server-side de áudio recebido para facilitar o atendimento;
 - anexos em bucket privado;
 - linguagem simples na tela, sem termos técnicos para o cliente final.
 
@@ -175,6 +175,7 @@ Controles necessários:
 - botão para devolver conversa assumida por humano para a IA;
 - sinalização no chat quando a IA estiver desativada no painel administrativo;
 - ocultar ou bloquear ações locais de pausa quando a IA estiver desligada globalmente;
+- controle de transcrição de áudio disponível somente quando a IA estiver desligada;
 - modal de resumo/classificação da IA no chat;
 - selo no chat para indicar quando uma mensagem de áudio possui transcrição;
 - persistência em `ai_sessions`, `ai_messages` e `ai_classifications`;

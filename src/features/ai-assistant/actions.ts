@@ -45,6 +45,10 @@ const operationModeValues = aiAssistantOperationModes.map((mode) => mode.value) 
 
 const aiAssistantSettingsSchema = z.object({
   assistantName: z.string().trim().min(2, "Informe o nome da assistente.").max(80),
+  audioTranscriptionEnabledWhenAiOff: z.preprocess(
+    (value) => value === "on" || value === "true",
+    z.boolean(),
+  ),
   maxContextMessages: z.coerce
     .number()
     .int()
@@ -102,6 +106,8 @@ function buildSettingsFromInput(
 ): AiAssistantSettings {
   return {
     assistantName: data.assistantName,
+    audioTranscriptionEnabledWhenAiOff:
+      data.operationMode === "off" && data.audioTranscriptionEnabledWhenAiOff,
     automaticReplyEnabled: data.operationMode === "automatic",
     enabled: data.operationMode !== "off",
     maxContextMessages: data.maxContextMessages,
@@ -157,6 +163,7 @@ function buildSimulationContext(message: string): AiConversationContext {
 function parseSettingsFormData(formData: FormData) {
   return {
     assistantName: formData.get("assistantName"),
+    audioTranscriptionEnabledWhenAiOff: formData.get("audioTranscriptionEnabledWhenAiOff"),
     maxContextMessages: formData.get("maxContextMessages"),
     model: formData.get("model"),
     officeContext: formData.get("officeContext"),
@@ -186,9 +193,12 @@ export async function updateAiAssistantSettings(
   const supabase = await createClient();
   const enabled = parsed.data.operationMode !== "off";
   const automaticReplyEnabled = parsed.data.operationMode === "automatic";
+  const audioTranscriptionEnabledWhenAiOff =
+    !enabled && parsed.data.audioTranscriptionEnabledWhenAiOff;
   const { error } = await supabase.from("ai_assistant_settings").upsert({
     id: 1,
     assistant_name: parsed.data.assistantName,
+    audio_transcription_enabled_when_ai_off: audioTranscriptionEnabledWhenAiOff,
     automatic_reply_enabled: automaticReplyEnabled,
     enabled,
     max_context_messages: parsed.data.maxContextMessages,

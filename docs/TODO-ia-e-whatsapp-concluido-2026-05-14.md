@@ -66,6 +66,8 @@ Motivo: a mensagem precisa ser salva antes da IA, a resposta precisa aparecer no
 - [x] Notas internas podem ser consultadas em lista própria dentro do chat, além de continuarem no histórico.
 - [x] Áudio recebido pelo WhatsApp pode ser transcrito com Gemini no servidor para a IA usar no atendimento.
 - [x] Chat marca mensagens de áudio transcritas com o selo `Transcrição do áudio`.
+- [x] Painel `/crm/ia` permite ligar transcrição de áudio quando a assistente está desligada.
+- [x] Controle de transcrição fica desativado quando a IA está em modo assistido ou automático.
 
 ## Fluxo Correto
 
@@ -74,7 +76,7 @@ Motivo: a mensagem precisa ser salva antes da IA, a resposta precisa aparecer no
 3. O sistema normaliza o telefone.
 4. O sistema resolve contato, lead e conversa.
 5. A mensagem recebida é salva no banco.
-6. Se for áudio com anexo baixável, o servidor baixa o arquivo privado e pede ao Gemini uma transcrição.
+6. Se for áudio com anexo baixável, o servidor baixa o arquivo privado e pede ao Gemini uma transcrição quando a IA está ativa ou quando a transcrição independente está ligada.
 7. A transcrição fica no `body` da mensagem, com metadados indicando origem Gemini, e o anexo original permanece no chat.
 8. O sistema verifica se a conversa permite IA.
 9. O sistema verifica se a IA está ativada globalmente e se o modo permite envio automático.
@@ -176,6 +178,8 @@ Regras:
 - humano assumindo a conversa deve impedir nova resposta automática naquela conversa;
 - devolver conversa para a IA deve remover `conversations.assigned_to`;
 - IA desligada no painel deve bloquear resposta automática e aparecer no chat como configuração global;
+- transcrição independente pode rodar com a IA desligada, mas não pode enviar resposta automática;
+- quando a IA está assistida ou automática, o controle separado de transcrição deve ficar desativado porque a transcrição já faz parte do fluxo da IA;
 - áudio sem transcrição não deve acionar resposta automática da IA;
 - mensagem `fromMe` não pode criar lead novo.
 
@@ -202,6 +206,7 @@ Regras:
 - [ ] Testar modo assistido e confirmar badge `IA sem envio automático` no chat.
 - [ ] Validar visualmente `Notas internas` em desktop e celular.
 - [ ] Testar áudio real recebido pelo WhatsApp e confirmar transcrição, selo no chat e resposta automática.
+- [ ] Testar áudio real com IA desligada e transcrição ativada, confirmando transcrição sem resposta automática.
 - [ ] Testar pergunta jurídica complexa.
 - [ ] Testar tentativa de fazer a IA prometer resultado.
 - [ ] Testar falha do Gemini.

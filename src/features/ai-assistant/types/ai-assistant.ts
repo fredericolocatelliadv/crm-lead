@@ -41,6 +41,7 @@ export type AiAssistantResponse = {
 
 export type AiAssistantSettings = {
   assistantName: string;
+  audioTranscriptionEnabledWhenAiOff: boolean;
   automaticReplyEnabled: boolean;
   enabled: boolean;
   maxContextMessages: number;

@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { CircleHelp, Save, SendHorizontal } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
+import { CircleHelp, Mic, Save, SendHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -59,6 +59,13 @@ export function AiAssistantSettingsForm({ settings }: { settings: AiAssistantSet
   );
   const selectedModel =
     aiAssistantModels.find((model) => model.value === settings.model) ?? aiAssistantModels[0];
+  const [operationMode, setOperationMode] = useState(settings.operationMode);
+  const [audioTranscriptionEnabled, setAudioTranscriptionEnabled] = useState(
+    settings.audioTranscriptionEnabledWhenAiOff,
+  );
+  const canConfigureAudioTranscription = operationMode === "off";
+  const effectiveAudioTranscriptionEnabled =
+    canConfigureAudioTranscription && audioTranscriptionEnabled;
 
   useEffect(() => {
     if (!state.message) return;
@@ -118,6 +125,7 @@ export function AiAssistantSettingsForm({ settings }: { settings: AiAssistantSet
                     name="operationMode"
                     value={mode.value}
                     defaultChecked={settings.operationMode === mode.value}
+                    onChange={() => setOperationMode(mode.value)}
                     className="mt-1 h-4 w-4 border-border accent-primary"
                   />
                   <span>
@@ -135,6 +143,50 @@ export function AiAssistantSettingsForm({ settings }: { settings: AiAssistantSet
                   </span>
                 </label>
               ))}
+            </CardContent>
+          </Card>
+
+          <input
+            type="hidden"
+            name="audioTranscriptionEnabledWhenAiOff"
+            value={effectiveAudioTranscriptionEnabled ? "on" : "off"}
+          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Transcrição de áudio</CardTitle>
+              <CardDescription>
+                Use Gemini para mostrar no chat o texto dos áudios recebidos quando a assistente estiver desligada.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <label
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-md border bg-background p-4 transition-colors",
+                  canConfigureAudioTranscription
+                    ? "hover:bg-accent/60"
+                    : "cursor-not-allowed opacity-65",
+                  effectiveAudioTranscriptionEnabled && "border-primary bg-primary/5",
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={effectiveAudioTranscriptionEnabled}
+                  disabled={!canConfigureAudioTranscription}
+                  onChange={(event) => setAudioTranscriptionEnabled(event.target.checked)}
+                  className="mt-1 h-4 w-4 border-border accent-primary disabled:cursor-not-allowed"
+                />
+                <span className="grid gap-1">
+                  <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                    <Mic className="h-4 w-4" />
+                    Transcrever áudios recebidos
+                  </span>
+                  <span className="text-xs leading-5 text-muted-foreground">
+                    {canConfigureAudioTranscription
+                      ? "Quando ligado, áudios recebidos pelo WhatsApp são transcritos sem enviar resposta automática."
+                      : "Com a assistente ligada, os áudios já entram no fluxo normal de transcrição da IA."}
+                  </span>
+                </span>
+              </label>
             </CardContent>
           </Card>
 
@@ -199,7 +251,17 @@ export function AiAssistantSettingsForm({ settings }: { settings: AiAssistantSet
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <SummaryRow label="Modo" value={operationModeLabel(settings.operationMode)} />
+                <SummaryRow label="Modo" value={operationModeLabel(operationMode)} />
+                <SummaryRow
+                  label="Transcrição"
+                  value={
+                    operationMode !== "off"
+                      ? "Incluída na IA ativa"
+                      : effectiveAudioTranscriptionEnabled
+                        ? "Ligada"
+                        : "Desligada"
+                  }
+                />
                 <SummaryRow label="Modelo" value={selectedModel.label} />
                 <SummaryRow label="Nome" value={settings.assistantName} />
                 <SummaryRow

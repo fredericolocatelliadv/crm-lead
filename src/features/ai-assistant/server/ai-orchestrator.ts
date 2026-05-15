@@ -294,14 +294,6 @@ export async function runAiAssistantForMessage(
 ): Promise<AiAssistantRunResult> {
   const settings = await getAiAssistantSettings(supabase);
 
-  if (!settings.enabled) {
-    return {
-      decision: "blocked",
-      reason: "IA desativada no painel.",
-      shouldSendReply: false,
-    };
-  }
-
   let context = await getAiConversationContext(supabase, {
     conversationId: params.conversationId,
     maxRecentMessages: settings.maxContextMessages,
@@ -316,7 +308,12 @@ export async function runAiAssistantForMessage(
     };
   }
 
-  if (context.targetMessage.kind === "audio" && !context.targetMessage.transcribedAudio) {
+  const shouldTranscribeTargetAudio =
+    context.targetMessage.kind === "audio" &&
+    !context.targetMessage.transcribedAudio &&
+    (settings.enabled || settings.audioTranscriptionEnabledWhenAiOff);
+
+  if (shouldTranscribeTargetAudio) {
     const transcribed = await transcribeTargetAudioMessage(supabase, {
       leadId: context.lead?.id ?? null,
       messageId: context.targetMessage.id,
@@ -336,6 +333,16 @@ export async function runAiAssistantForMessage(
     return {
       decision: "skipped",
       reason: "Contexto não encontrado após transcrição do áudio.",
+      shouldSendReply: false,
+    };
+  }
+
+  if (!settings.enabled) {
+    return {
+      decision: "blocked",
+      reason: settings.audioTranscriptionEnabledWhenAiOff
+        ? "IA desativada no painel. Transcrição de áudio independente ativa."
+        : "IA desativada no painel.",
       shouldSendReply: false,
     };
   }

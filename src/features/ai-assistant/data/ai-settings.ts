@@ -17,6 +17,7 @@ import { createClient } from "@/server/supabase/server";
 
 type AiAssistantSettingsRow = {
   assistant_name: string;
+  audio_transcription_enabled_when_ai_off: boolean | null;
   automatic_reply_enabled: boolean;
   enabled: boolean;
   max_context_messages: number;
@@ -32,6 +33,7 @@ type AiAssistantSettingsRow = {
 
 export const defaultAiAssistantSettings: AiAssistantSettings = {
   assistantName: "Assistente virtual",
+  audioTranscriptionEnabledWhenAiOff: false,
   automaticReplyEnabled: false,
   enabled: false,
   maxContextMessages: 8,
@@ -70,6 +72,8 @@ function mapAiAssistantSettings(row: AiAssistantSettingsRow | null): AiAssistant
 
   return {
     assistantName: row.assistant_name,
+    audioTranscriptionEnabledWhenAiOff:
+      operationMode === "off" && row.audio_transcription_enabled_when_ai_off === true,
     automaticReplyEnabled: operationMode === "automatic",
     enabled: operationMode !== "off",
     maxContextMessages: row.max_context_messages,
@@ -92,7 +96,7 @@ export async function getAiAssistantSettings(
   const { data, error } = await supabase
     .from("ai_assistant_settings")
     .select(
-      "enabled,automatic_reply_enabled,operation_mode,model,assistant_name,personality,prompt_instructions,response_style,safety_instructions,office_context,max_context_messages,updated_at",
+      "enabled,automatic_reply_enabled,audio_transcription_enabled_when_ai_off,operation_mode,model,assistant_name,personality,prompt_instructions,response_style,safety_instructions,office_context,max_context_messages,updated_at",
     )
     .eq("id", 1)
     .maybeSingle();

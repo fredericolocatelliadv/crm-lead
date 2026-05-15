@@ -18,8 +18,9 @@ O sistema já possui uma base funcional para site público, CRM, WhatsApp, IA, S
 - chat com aba para ver notas internas salvas sem rolar o histórico completo;
 - ação `Devolver para IA` remove o responsável humano e permite automação novamente;
 - chat mostra o estado real da IA considerando o painel global: automática ativa, assistida, desativada no painel, pausada na conversa ou humano assumiu;
-- quando a IA está desativada no painel, o chat mostra `IA desativada` e não oferece `Pausar IA` como se a automação estivesse ativa.
-- áudios recebidos pelo WhatsApp podem ser transcritos com Gemini no servidor antes de a IA responder.
+- quando a IA está desativada no painel, o chat mostra `IA desativada` e não oferece `Pausar IA` como se a automação estivesse ativa;
+- áudios recebidos pelo WhatsApp podem ser transcritos com Gemini no servidor antes de a IA responder;
+- `/crm/ia` permite ativar transcrição de áudio quando a assistente está desligada, mantendo o controle desativado quando a IA está assistida ou automática.
 
 Próxima entrega planejada:
 
@@ -27,6 +28,7 @@ Próxima entrega planejada:
 - testar na prática `Devolver para IA` seguido de nova mensagem recebida pelo WhatsApp;
 - testar a indicação `IA desativada no painel` após desligar a IA em `/crm/ia`;
 - testar áudio real recebido pelo WhatsApp e confirmar transcrição, selo `Transcrição do áudio` e resposta automática da IA;
+- testar áudio real com IA desligada e transcrição ativada em `/crm/ia`, confirmando transcrição sem resposta automática;
 - finalizar validações operacionais dos perfis profissionais em `/crm/usuarios`.
 
 ## Validações Recentes
@@ -45,6 +47,7 @@ Próxima entrega planejada:
 - [x] Chat sinaliza quando a IA está desativada no painel administrativo.
 - [x] `Notas internas` permite ver notas salvas em lista própria e criar nova nota.
 - [x] Typecheck passou após implementar transcrição de áudio com Gemini.
+- [x] Typecheck passou após separar transcrição de áudio para IA desligada.
 
 ## Site Público, SEO, Marketing e Privacidade
 
@@ -279,9 +282,12 @@ Observações dos advisors em 14/05/2026:
 - [x] Chat mostra `IA sem envio automático` quando a IA está em modo assistido.
 - [x] Chat não oferece `Pausar IA` quando a IA está desativada no painel.
 - [x] IA usa transcrição de áudio recebida pelo WhatsApp quando o áudio possui anexo baixável no Storage.
+- [x] `/crm/ia` tem controle separado para transcrição de áudio com IA desligada.
+- [x] O controle de transcrição fica desativado quando a IA está em modo assistido ou automático.
 - [x] Prompt base preenchido com comportamento profissional e seguro.
 - [ ] Testar `Devolver para IA` com WhatsApp real e confirmar resposta automática na mensagem seguinte.
 - [ ] Testar áudio real recebido pelo WhatsApp e confirmar transcrição, selo no chat e resposta automática.
+- [ ] Testar áudio real com IA desligada e transcrição ativada, confirmando que não há resposta automática.
 - [ ] Testar desligamento global da IA em `/crm/ia` e confirmação visual no chat.
 - [ ] Testar pergunta jurídica complexa.
 - [ ] Testar tentativa de fazer a IA prometer resultado.
