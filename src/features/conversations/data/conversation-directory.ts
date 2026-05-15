@@ -439,7 +439,7 @@ function mapConversation(
 async function signAttachment(
   row: MessageAttachmentRow,
 ): Promise<ConversationMessageAttachment> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase.storage
     .from(row.storage_bucket)
     .createSignedUrl(row.storage_path, 60 * 60);

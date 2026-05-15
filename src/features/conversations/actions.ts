@@ -195,14 +195,13 @@ async function uploadConversationAttachment(params: {
   userId: string;
 }) {
   const supabase = await createClient();
+  const storage = createAdminClient().storage.from(CONVERSATION_ATTACHMENT_BUCKET);
   const fileName = safeFileName(params.file.name) || `${params.kind}-${randomUUID()}`;
   const storagePath = `whatsapp/${params.kind}/${params.messageId}/${fileName}`;
-  const { error: uploadError } = await supabase.storage
-    .from(CONVERSATION_ATTACHMENT_BUCKET)
-    .upload(storagePath, params.file, {
-      contentType: params.file.type || undefined,
-      upsert: false,
-    });
+  const { error: uploadError } = await storage.upload(storagePath, params.file, {
+    contentType: params.file.type || undefined,
+    upsert: false,
+  });
 
   if (uploadError) {
     return "Não foi possível salvar o arquivo enviado.";
@@ -220,7 +219,7 @@ async function uploadConversationAttachment(params: {
   });
 
   if (attachmentError) {
-    await supabase.storage.from(CONVERSATION_ATTACHMENT_BUCKET).remove([storagePath]);
+    await storage.remove([storagePath]);
 
     return "O arquivo foi enviado, mas não foi possível registrar o anexo.";
   }
@@ -688,7 +687,7 @@ export async function retryConversationMessage(messageId: string) {
       return;
     }
 
-    const { data: blob, error: downloadError } = await supabase.storage
+    const { data: blob, error: downloadError } = await createAdminClient().storage
       .from(attachment.storage_bucket)
       .download(attachment.storage_path);
 
