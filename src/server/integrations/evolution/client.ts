@@ -88,10 +88,16 @@ function getEvolutionWebhookUrl() {
     throw new EvolutionConfigurationError("Webhook do WhatsApp ainda não foi configurado.");
   }
 
-  const appUrl = process.env.APP_URL?.trim()?.replace(/\/+$/, "");
   const configuredUrl = process.env.EVOLUTION_WEBHOOK_URL?.trim();
-  const webhookBaseUrl = configuredUrl ?? appUrl ?? "http://localhost:3000";
-  const url = new URL(`${webhookBaseUrl}/api/webhooks/evolution`);
+  const appUrl = process.env.APP_URL?.trim()?.replace(/\/+$/, "") ?? "http://localhost:3000";
+  const webhookPath = "/api/webhooks/evolution";
+  const url = configuredUrl
+    ? new URL(configuredUrl)
+    : new URL(`${appUrl}${webhookPath}`);
+
+  if (configuredUrl && (url.pathname === "/" || url.pathname === "")) {
+    url.pathname = webhookPath;
+  }
 
   if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
     url.hostname = "host.docker.internal";
@@ -214,18 +220,31 @@ export async function deleteEvolutionInstance(instanceName = getEvolutionInstanc
 }
 
 export async function setEvolutionWebhook(instanceName = getEvolutionInstanceName()) {
-  await evolutionRequest(`/webhook/set/${encodeURIComponent(instanceName)}`, {
-    body: {
-      webhook: {
-        enabled: true,
-        events: evolutionWebhookEvents,
-        url: getEvolutionWebhookUrl(),
-        base64: true,
-        byEvents: false,
-      },
-    },
-    method: "POST",
-  });
+  const webhook = {
+    enabled: true,
+    events: evolutionWebhookEvents,
+    url: getEvolutionWebhookUrl(),
+    webhookBase64: true,
+    webhookByEvents: false,
+  };
+  const path = `/webhook/set/${encodeURIComponent(instanceName)}`;
+
+  try {
+    await evolutionRequest(path, {
+      body: webhook,
+      method: "POST",
+    });
+  } catch (error) {
+    if (error instanceof EvolutionRequestError && error.status === 400) {
+      await evolutionRequest(path, {
+        body: { webhook },
+        method: "POST",
+      });
+      return;
+    }
+
+    throw error;
+  }
 }
 
 export async function sendEvolutionTextMessage(params: {

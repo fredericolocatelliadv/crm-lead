@@ -242,7 +242,6 @@ export async function connectWhatsApp(
   try {
     const record = await getOrCreateConnectionRecord(user.id);
     await createEvolutionInstance();
-    await setEvolutionWebhook();
 
     const qrCode = await requestEvolutionQrCode();
     const rawCode = qrCode.code || qrCode.base64 || null;
@@ -255,6 +254,14 @@ export async function connectWhatsApp(
     }
 
     await QRCode.toDataURL(rawCode);
+
+    let webhookConfigured = true;
+
+    try {
+      await setEvolutionWebhook();
+    } catch {
+      webhookConfigured = false;
+    }
 
     const supabase = await createClient();
     const now = new Date().toISOString();
@@ -281,7 +288,9 @@ export async function connectWhatsApp(
 
     await registerConnectionEvent({
       createdBy: user.id,
-      description: "Aguardando leitura pelo celular.",
+      description: webhookConfigured
+        ? "Aguardando leitura pelo celular."
+        : "QR Code gerado, mas o recebimento de mensagens ainda precisa ser verificado.",
       instanceId: record.id,
       title: "Código de conexão gerado",
       type: "qr_requested",
@@ -290,7 +299,9 @@ export async function connectWhatsApp(
     revalidateWhatsAppPaths();
 
     return {
-      message: "Código de conexão gerado.",
+      message: webhookConfigured
+        ? "Código de conexão gerado."
+        : "Código gerado. Verifique a configuração do recebimento de mensagens.",
       ok: true,
     };
   } catch (error) {
