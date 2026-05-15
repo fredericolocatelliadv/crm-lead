@@ -233,7 +233,7 @@ export async function updateLead(
   const supabase = await createClient();
   const { data: currentLead, error: currentError } = await supabase
     .from("leads")
-    .select("name,email,phone,city,legal_area,description,source,priority,pipeline_stage_id,summary,best_contact_time,assignee_id")
+    .select("contact_id,name,email,phone,city,legal_area,description,source,priority,pipeline_stage_id,summary,best_contact_time,assignee_id")
     .eq("id", leadId)
     .maybeSingle();
 
@@ -267,6 +267,26 @@ export async function updateLead(
       message: "Não foi possível salvar as alterações do lead.",
       ok: false,
     };
+  }
+
+  if (currentLead.contact_id) {
+    const { error: contactError } = await supabase
+      .from("contacts")
+      .update({
+        city: parsed.data.city,
+        email: parsed.data.email,
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        updated_at: nextLead.updated_at,
+      })
+      .eq("id", currentLead.contact_id);
+
+    if (contactError) {
+      return {
+        message: "O lead foi atualizado, mas não foi possível sincronizar o contato vinculado.",
+        ok: false,
+      };
+    }
   }
 
   const changedFields = Object.entries(nextLead)

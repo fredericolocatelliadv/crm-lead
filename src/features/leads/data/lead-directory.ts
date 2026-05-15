@@ -415,6 +415,18 @@ export async function getLeadById(id: string): Promise<LeadDetailData> {
   }
 
   const conversation = conversationResult.data as ConversationRow | null;
+  const lead = mapLeadDetail(leadResult.data as LeadRow, conversation?.id ?? null);
+  const stages = [...options.stages];
+
+  if (
+    lead.pipelineStageId &&
+    !stages.some((stage) => stage.id === lead.pipelineStageId)
+  ) {
+    stages.push({
+      id: lead.pipelineStageId,
+      label: lead.stageName ? `${lead.stageName} (inativa)` : "Etapa atual inativa",
+    });
+  }
 
   return {
     assignees: options.assignees,
@@ -425,14 +437,14 @@ export async function getLeadById(id: string): Promise<LeadDetailData> {
       eventType: event.event_type,
       id: event.id,
     })),
-    lead: mapLeadDetail(leadResult.data as LeadRow, conversation?.id ?? null),
+    lead,
     notes: ((notesResult.data ?? []) as LeadNoteRow[]).map((note) => ({
       authorName: profileLabel(relatedOne(note.author)),
       content: note.content,
       createdAt: note.created_at,
       id: note.id,
     })),
-    stages: options.stages,
+    stages,
   };
 }
 

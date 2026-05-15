@@ -16,6 +16,7 @@ import type {
   LeadPriority,
 } from "@/features/leads/types/lead";
 import {
+  editableLeadSources,
   leadPriorities,
   priorityLabels,
   sourceLabels,
@@ -53,8 +54,6 @@ type LeadFormProps = {
 const initialState: LeadActionState = {
   ok: false,
 };
-
-const leadSources = ["manual", "site", "whatsapp", "chatbot", "ai"] as const;
 
 export function LeadForm({
   action,
@@ -152,7 +151,7 @@ export function LeadForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {leadSources.map((item) => (
+                  {editableLeadSources.map((item) => (
                     <SelectItem key={item} value={item}>
                       {sourceLabels[item]}
                     </SelectItem>

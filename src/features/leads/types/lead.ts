@@ -2,6 +2,14 @@ import type { BadgeProps } from "@/shared/components/ui/badge";
 
 export const leadPriorities = ["low", "medium", "high"] as const;
 export const leadStatuses = ["open", "converted", "lost"] as const;
+export const editableLeadSources = [
+  "manual",
+  "site",
+  "site_whatsapp",
+  "whatsapp",
+  "chatbot",
+  "ai",
+] as const;
 
 export type LeadPriority = (typeof leadPriorities)[number];
 export type LeadStatus = (typeof leadStatuses)[number];
