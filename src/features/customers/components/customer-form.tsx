@@ -6,6 +6,13 @@ import { Save } from "lucide-react";
 
 import type { CustomerActionState } from "@/features/customers/actions";
 import type { CustomerFormValues } from "@/features/customers/data/customer-directory";
+import type { LeadOption, LeadPriority } from "@/features/leads/types/lead";
+import {
+  editableLeadSources,
+  leadPriorities,
+  priorityLabels,
+  sourceLabels,
+} from "@/features/leads/types/lead";
 import {
   mergeLegalAreaOptions,
   type LegalAreaOption,
@@ -35,6 +42,7 @@ type CustomerFormProps = {
   ) => Promise<CustomerActionState>;
   customerId: string;
   initialValues: CustomerFormValues;
+  assignees: LeadOption[];
   legalAreas: LegalAreaOption[];
 };
 
@@ -42,17 +50,27 @@ const initialState: CustomerActionState = {
   ok: false,
 };
 
-export function CustomerForm({ action, customerId, initialValues, legalAreas }: CustomerFormProps) {
+export function CustomerForm({
+  action,
+  assignees,
+  customerId,
+  initialValues,
+  legalAreas,
+}: CustomerFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
+  const [assigneeId, setAssigneeId] = useState(initialValues.assigneeId ?? "none");
   const [legalArea, setLegalArea] = useState(initialValues.legalArea ?? "none");
+  const [priority, setPriority] = useState<LeadPriority>(initialValues.priority);
+  const [source, setSource] = useState(initialValues.source);
   const areaItems = mergeLegalAreaOptions(legalAreas, initialValues.legalArea);
+  const sourceItems = Array.from(new Set([...editableLeadSources, initialValues.source]));
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Editar cliente</CardTitle>
         <CardDescription>
-          Atualize os dados comerciais básicos do cliente convertido.
+          Atualize o cadastro, o contato e o contexto comercial do cliente convertido.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -64,7 +82,10 @@ export function CustomerForm({ action, customerId, initialValues, legalAreas }: 
           ) : null}
 
           <section className="grid gap-4 lg:grid-cols-2">
+            <input type="hidden" name="assigneeId" value={assigneeId} />
             <input type="hidden" name="legalArea" value={legalArea} />
+            <input type="hidden" name="priority" value={priority} />
+            <input type="hidden" name="source" value={source} />
 
             <Field label="Nome" error={state.fieldErrors?.name?.[0]}>
               <Input name="name" defaultValue={initialValues.name} required />
@@ -76,6 +97,10 @@ export function CustomerForm({ action, customerId, initialValues, legalAreas }: 
 
             <Field label="E-mail" error={state.fieldErrors?.email?.[0]}>
               <Input name="email" type="email" defaultValue={initialValues.email ?? ""} />
+            </Field>
+
+            <Field label="Cidade" error={state.fieldErrors?.city?.[0]}>
+              <Input name="city" defaultValue={initialValues.city ?? ""} />
             </Field>
 
             <Field label="Área jurídica" error={state.fieldErrors?.legalArea?.[0]}>
@@ -93,9 +118,71 @@ export function CustomerForm({ action, customerId, initialValues, legalAreas }: 
                 </SelectContent>
               </Select>
             </Field>
+
+            <Field label="Prioridade" error={state.fieldErrors?.priority?.[0]}>
+              <Select value={priority} onValueChange={(value) => setPriority(value as LeadPriority)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {leadPriorities.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {priorityLabels[item]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label="Origem" error={state.fieldErrors?.source?.[0]}>
+              <Select value={source} onValueChange={setSource}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sourceItems.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {sourceLabels[item] ?? item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label="Responsável" error={state.fieldErrors?.assigneeId?.[0]}>
+              <Select value={assigneeId} onValueChange={setAssigneeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem responsável</SelectItem>
+                  {assignees.map((assignee) => (
+                    <SelectItem key={assignee.id} value={assignee.id}>
+                      {assignee.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label="Melhor horário de contato" error={state.fieldErrors?.bestContactTime?.[0]}>
+              <Input
+                name="bestContactTime"
+                defaultValue={initialValues.bestContactTime ?? ""}
+                placeholder="Ex.: manhã, tarde, após 18h"
+              />
+            </Field>
           </section>
 
-          <Field label="Observações básicas" error={state.fieldErrors?.notes?.[0]}>
+          <Field label="Descrição do caso" error={state.fieldErrors?.description?.[0]}>
+            <Textarea name="description" defaultValue={initialValues.description ?? ""} rows={5} />
+          </Field>
+
+          <Field label="Resumo interno" error={state.fieldErrors?.summary?.[0]}>
+            <Textarea name="summary" defaultValue={initialValues.summary ?? ""} rows={4} />
+          </Field>
+
+          <Field label="Observações do cliente" error={state.fieldErrors?.notes?.[0]}>
             <Textarea name="notes" defaultValue={initialValues.notes ?? ""} rows={5} />
           </Field>
 

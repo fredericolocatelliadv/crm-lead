@@ -4,13 +4,17 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
   CalendarCheck,
+  Clock,
   FileText,
+  Flag,
   Mail,
+  MapPin,
   MessageCircle,
   Paperclip,
   Pencil,
   Phone,
   ShieldCheck,
+  UserCheck,
   UserRound,
 } from "lucide-react";
 
@@ -19,6 +23,7 @@ import {
   CustomerNoteDialog,
 } from "@/features/customers/components/customer-actions";
 import type { CustomerDetailData } from "@/features/customers/data/customer-directory";
+import { getSourceLabel, priorityLabels } from "@/features/leads/types/lead";
 import { EmptyState } from "@/shared/components/crm/page-state";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -82,6 +87,12 @@ export function CustomerDetailView({ data }: CustomerDetailViewProps) {
         <CardContent className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
           <InfoItem icon={Phone} label="Telefone" value={customer.phone || "Não informado"} />
           <InfoItem icon={Mail} label="E-mail" value={customer.email || "Não informado"} />
+          <InfoItem icon={MapPin} label="Cidade" value={customer.city || "Não informada"} />
+          <InfoItem
+            icon={Clock}
+            label="Melhor horário de contato"
+            value={customer.bestContactTime || "Não informado"}
+          />
           <InfoItem
             icon={CalendarCheck}
             label="Data de conversão"
@@ -92,8 +103,14 @@ export function CustomerDetailView({ data }: CustomerDetailViewProps) {
             label="Responsável pela conversão"
             value={customer.convertedByName || "Não informado"}
           />
+          <InfoItem
+            icon={UserCheck}
+            label="Responsável comercial"
+            value={customer.assigneeName || "Sem responsável"}
+          />
           <InfoItem label="Área jurídica" value={customer.legalArea || "Não informada"} />
-          <InfoItem label="Origem do lead" value={customer.leadSource || "Não informada"} />
+          <InfoItem icon={Flag} label="Prioridade" value={priorityLabels[customer.priority]} />
+          <InfoItem label="Origem do lead" value={getSourceLabel(customer.leadSource)} />
           <InfoItem label="Entrada do lead" value={customer.leadCreatedAt ? formatDateTime(customer.leadCreatedAt) : "Não informada"} />
           <InfoItem
             icon={ShieldCheck}

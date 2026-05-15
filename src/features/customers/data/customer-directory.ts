@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import type { LeadPriority } from "@/features/leads/types/lead";
 import { createClient } from "@/server/supabase/server";
 
 export type CustomerFilters = {
@@ -45,6 +46,10 @@ export type CustomerAttachment = {
 
 export type CustomerDetail = CustomerListItem & {
   attachments: CustomerAttachment[];
+  assigneeId: string | null;
+  assigneeName: string | null;
+  bestContactTime: string | null;
+  city: string | null;
   conversationId: string | null;
   createdAt: string;
   events: CustomerEvent[];
@@ -53,15 +58,23 @@ export type CustomerDetail = CustomerListItem & {
   leadSource: string | null;
   leadSummary: string | null;
   notes: CustomerNote[];
+  priority: LeadPriority;
   registryNotes: string | null;
 };
 
 export type CustomerFormValues = {
+  assigneeId: string | null;
+  bestContactTime: string | null;
+  city: string | null;
+  description: string | null;
   email: string | null;
   legalArea: string | null;
   name: string;
   notes: string | null;
   phone: string | null;
+  priority: LeadPriority;
+  source: string;
+  summary: string | null;
 };
 
 export type CustomerListData = {
@@ -75,15 +88,26 @@ export type CustomerDetailData = {
 
 type RelatedProfile = { email: string | null; full_name: string | null };
 type RelatedLead = {
+  assignee?: RelatedProfile | RelatedProfile[] | null;
+  assignee_id?: string | null;
+  best_contact_time?: string | null;
+  city?: string | null;
   created_at: string | null;
   description: string | null;
   id: string;
   legal_area: string | null;
+  priority?: LeadPriority | null;
   source: string | null;
   summary: string | null;
 };
 
+type RelatedContact = {
+  city: string | null;
+  id: string;
+};
+
 type CustomerRow = {
+  contact_id: string | null;
   converted_at: string;
   converted_by_profile?: RelatedProfile | RelatedProfile[] | null;
   created_at: string;
@@ -159,11 +183,18 @@ export function parseCustomerFilters(
 
 export function customerToFormValues(customer: CustomerDetail): CustomerFormValues {
   return {
+    assigneeId: customer.assigneeId,
+    bestContactTime: customer.bestContactTime,
+    city: customer.city,
+    description: customer.leadDescription,
     email: customer.email,
     legalArea: customer.legalArea,
     name: customer.name,
     notes: customer.registryNotes,
     phone: customer.phone,
+    priority: customer.priority,
+    source: customer.leadSource ?? "manual",
+    summary: customer.leadSummary,
   };
 }
 
@@ -206,7 +237,7 @@ export async function getCustomerList(filters: CustomerFilters): Promise<Custome
   const { data, error } = await supabase
     .from("customers")
     .select(
-      "id,lead_id,name,email,phone,converted_at,created_at,notes,converted_by_profile:profiles!customers_converted_by_fkey(full_name,email),leads(id,legal_area,source,summary,description,created_at)",
+      "id,contact_id,lead_id,name,email,phone,converted_at,created_at,notes,converted_by_profile:profiles!customers_converted_by_fkey(full_name,email),leads(id,legal_area,source,summary,description,created_at)",
     )
     .order("converted_at", { ascending: false })
     .limit(100);
@@ -245,7 +276,7 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
   const customerResult = await supabase
     .from("customers")
     .select(
-      "id,lead_id,name,email,phone,converted_at,created_at,notes,converted_by_profile:profiles!customers_converted_by_fkey(full_name,email),leads(id,legal_area,source,summary,description,created_at)",
+      "id,contact_id,lead_id,name,email,phone,converted_at,created_at,notes,converted_by_profile:profiles!customers_converted_by_fkey(full_name,email),leads(id,assignee_id,best_contact_time,city,legal_area,source,priority,summary,description,created_at,assignee:profiles!leads_assignee_id_fkey(full_name,email))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -262,8 +293,22 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
   const lead = relatedOne(customerRow.leads);
   const leadId = customerRow.lead_id;
 
-  const [customerNotesResult, leadNotesResult, eventsResult, attachmentsResult, conversationResult] =
+  const [
+    contactResult,
+    customerNotesResult,
+    leadNotesResult,
+    eventsResult,
+    attachmentsResult,
+    conversationResult,
+  ] =
     await Promise.all([
+      customerRow.contact_id
+        ? supabase
+            .from("contacts")
+            .select("id,city")
+            .eq("id", customerRow.contact_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
       supabase
         .from("notes")
         .select("id,content,created_at,author:profiles!notes_author_id_fkey(full_name,email)")
@@ -305,6 +350,7 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
     ]);
 
   if (
+    contactResult.error ||
     customerNotesResult.error ||
     leadNotesResult.error ||
     eventsResult.error ||
@@ -314,6 +360,7 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
     throw new Error("Não foi possível carregar o histórico do cliente.");
   }
 
+  const contact = contactResult.data as RelatedContact | null;
   const conversation = conversationResult.data as ConversationRow | null;
 
   const attachments = await Promise.all(
@@ -358,6 +405,10 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
     customer: {
       ...mapCustomer(customerRow),
       attachments,
+      assigneeId: lead?.assignee_id ?? null,
+      assigneeName: profileLabel(relatedOne(lead?.assignee)),
+      bestContactTime: lead?.best_contact_time ?? null,
+      city: contact?.city ?? lead?.city ?? null,
       conversationId: conversation?.id ?? null,
       createdAt: customerRow.created_at,
       events: ((eventsResult.data ?? []) as EventRow[]).map((event) => ({
@@ -374,6 +425,7 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
       notes: [...customerNotes, ...leadNotes].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       ),
+      priority: lead?.priority ?? "medium",
       registryNotes: customerRow.notes,
     },
   };

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import type { LeadPriority } from "@/features/leads/types/lead";
 import { getCurrentUserRole } from "@/features/users/data/user-directory";
 import { hasPermission } from "@/server/auth/permissions";
 import { requireCurrentUser } from "@/server/auth/session";
@@ -42,7 +43,21 @@ const optionalText = z.preprocess(
   z.string().nullable(),
 );
 
+const optionalUuid = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+
+    return trimmed.length > 0 && trimmed !== "none" ? trimmed : null;
+  },
+  z.string().uuid().nullable(),
+);
+
 const customerFormSchema = z.object({
+  assigneeId: optionalUuid,
+  bestContactTime: optionalText,
+  city: optionalText,
+  description: optionalText,
   email: optionalText.pipe(z.string().email("Informe um e-mail válido.").nullable()),
   legalArea: z.preprocess(
     (value) => {
@@ -56,7 +71,38 @@ const customerFormSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome do cliente."),
   notes: optionalText,
   phone: optionalText,
+  priority: z.enum(["low", "medium", "high"], {
+    error: "Informe a prioridade do cliente.",
+  }),
+  source: z.string().trim().min(2, "Informe a origem do cliente."),
+  summary: optionalText,
 });
+
+type CustomerActionLead = {
+  assignee_id: string | null;
+  best_contact_time: string | null;
+  city: string | null;
+  description: string | null;
+  email: string | null;
+  legal_area: string | null;
+  name: string;
+  phone: string | null;
+  priority: LeadPriority | null;
+  source: string | null;
+  summary: string | null;
+};
+
+type CustomerActionRow = {
+  contactCity: string | null;
+  contact_id: string | null;
+  email: string | null;
+  id: string;
+  lead_id: string | null;
+  leads?: CustomerActionLead | CustomerActionLead[] | null;
+  name: string;
+  notes: string | null;
+  phone: string | null;
+};
 
 async function assertCustomerWriteAccess() {
   const [user, role] = await Promise.all([requireCurrentUser(), getCurrentUserRole()]);
@@ -72,7 +118,9 @@ async function getCustomerForAction(customerId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("customers")
-    .select("id,contact_id,lead_id,name,email,phone,notes,leads(legal_area)")
+    .select(
+      "id,contact_id,lead_id,name,email,phone,notes,leads(name,email,phone,city,legal_area,description,source,priority,summary,best_contact_time,assignee_id)",
+    )
     .eq("id", customerId)
     .maybeSingle();
 
@@ -80,24 +128,50 @@ async function getCustomerForAction(customerId: string) {
     throw new Error("Não foi possível carregar o cliente.");
   }
 
-  return data;
-}
+  let contactCity: string | null = null;
 
-function getRelatedLead(value: unknown): { legal_area: string | null } | null {
-  if (Array.isArray(value)) {
-    return (value[0] as { legal_area: string | null } | undefined) ?? null;
+  if (data.contact_id) {
+    const { data: contact, error: contactError } = await supabase
+      .from("contacts")
+      .select("city")
+      .eq("id", data.contact_id)
+      .maybeSingle();
+
+    if (contactError) {
+      throw new Error("Não foi possível carregar o contato vinculado ao cliente.");
+    }
+
+    contactCity = contact?.city ?? null;
   }
 
-  return (value as { legal_area: string | null } | null) ?? null;
+  return {
+    ...(data as Omit<CustomerActionRow, "contactCity">),
+    contactCity,
+  };
+}
+
+function getRelatedLead(value: unknown): CustomerActionLead | null {
+  if (Array.isArray(value)) {
+    return (value[0] as CustomerActionLead | undefined) ?? null;
+  }
+
+  return (value as CustomerActionLead | null) ?? null;
 }
 
 function readCustomerFormData(formData: FormData) {
   return {
+    assigneeId: formData.get("assigneeId"),
+    bestContactTime: formData.get("bestContactTime"),
+    city: formData.get("city"),
+    description: formData.get("description"),
     email: formData.get("email"),
     legalArea: formData.get("legalArea"),
     name: formData.get("name"),
     notes: formData.get("notes"),
     phone: formData.get("phone"),
+    priority: formData.get("priority"),
+    source: formData.get("source"),
+    summary: formData.get("summary"),
   };
 }
 
@@ -128,6 +202,9 @@ function revalidateCustomerPaths(customerId: string, leadId?: string | null) {
   revalidatePath("/crm");
   revalidatePath("/crm/clientes");
   revalidatePath(`/crm/clientes/${customerId}`);
+  revalidatePath(`/crm/clientes/${customerId}/editar`);
+  revalidatePath("/crm/conversas");
+  revalidatePath("/crm/leads");
 
   if (leadId) {
     revalidatePath(`/crm/leads/${leadId}`);
@@ -211,6 +288,7 @@ export async function updateCustomer(
   const supabase = await createClient();
   const customer = await getCustomerForAction(customerId);
   const now = new Date().toISOString();
+  const relatedLead = getRelatedLead(customer.leads);
   const nextCustomer = {
     email: parsed.data.email,
     name: parsed.data.name,
@@ -232,6 +310,7 @@ export async function updateCustomer(
     const { error: contactError } = await supabase
       .from("contacts")
       .update({
+        city: parsed.data.city,
         email: parsed.data.email,
         name: parsed.data.name,
         phone: parsed.data.phone,
@@ -247,40 +326,65 @@ export async function updateCustomer(
     }
   }
 
-  const relatedLead = getRelatedLead(customer.leads);
-  const currentLegalArea = relatedLead?.legal_area ?? null;
-
   if (customer.lead_id) {
+    const nextLead = {
+      assignee_id: parsed.data.assigneeId,
+      best_contact_time: parsed.data.bestContactTime,
+      city: parsed.data.city,
+      description: parsed.data.description,
+      email: parsed.data.email,
+      legal_area: parsed.data.legalArea,
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      priority: parsed.data.priority,
+      source: parsed.data.source,
+      summary: parsed.data.summary,
+      updated_at: now,
+    };
+
     const { error: leadError } = await supabase
       .from("leads")
-      .update({
-        legal_area: parsed.data.legalArea,
-        updated_at: now,
-      })
+      .update(nextLead)
       .eq("id", customer.lead_id);
 
     if (leadError) {
       return {
-        message: "O cliente foi atualizado, mas não foi possível atualizar a área jurídica.",
+        message: "O cliente foi atualizado, mas não foi possível atualizar o lead vinculado.",
         ok: false,
       };
     }
   }
 
+  const currentValues = {
+    assigneeId: relatedLead?.assignee_id ?? null,
+    bestContactTime: relatedLead?.best_contact_time ?? null,
+    city: customer.contactCity ?? relatedLead?.city ?? null,
+    description: relatedLead?.description ?? null,
+    email: customer.email,
+    legalArea: relatedLead?.legal_area ?? null,
+    name: customer.name,
+    notes: customer.notes,
+    phone: customer.phone,
+    priority: relatedLead?.priority ?? "medium",
+    source: relatedLead?.source ?? "manual",
+    summary: relatedLead?.summary ?? null,
+  };
+
   const changedFields = Object.entries({
+    assigneeId: parsed.data.assigneeId,
+    bestContactTime: parsed.data.bestContactTime,
+    city: parsed.data.city,
+    description: parsed.data.description,
     email: nextCustomer.email,
     legalArea: parsed.data.legalArea,
     name: nextCustomer.name,
     notes: nextCustomer.notes,
     phone: nextCustomer.phone,
+    priority: parsed.data.priority,
+    source: parsed.data.source,
+    summary: parsed.data.summary,
   })
-    .filter(([key, value]) => {
-      if (key === "legalArea") {
-        return currentLegalArea !== value;
-      }
-
-      return customer[key as keyof typeof customer] !== value;
-    })
+    .filter(([key, value]) => currentValues[key as keyof typeof currentValues] !== value)
     .map(([key]) => key);
 
   await registerCustomerEvent({

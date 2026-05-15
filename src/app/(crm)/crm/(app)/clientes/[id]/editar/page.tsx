@@ -4,6 +4,7 @@ import {
   customerToFormValues,
   getCustomerById,
 } from "@/features/customers/data/customer-directory";
+import { getLeadFormOptions } from "@/features/leads/data/lead-directory";
 import { getActiveLegalAreaOptions } from "@/features/leads/data/legal-areas";
 import { getPageAccess } from "@/server/auth/route-guards";
 import { AccessDenied } from "@/shared/components/crm/access-denied";
@@ -23,8 +24,9 @@ export default async function EditCustomerPage({ params }: EditCustomerPageProps
   }
 
   const { id } = await params;
-  const [data, legalAreas] = await Promise.all([
+  const [data, leadOptions, legalAreas] = await Promise.all([
     getCustomerById(id),
+    getLeadFormOptions(),
     getActiveLegalAreaOptions(),
   ]);
 
@@ -38,12 +40,13 @@ export default async function EditCustomerPage({ params }: EditCustomerPageProps
           {data.customer.name}
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Mantenha atualizados os dados comerciais básicos do cliente convertido.
+          Mantenha atualizados os dados de contato e o contexto comercial do cliente convertido.
         </p>
       </section>
 
       <CustomerForm
         action={updateCustomer.bind(null, id)}
+        assignees={leadOptions.assignees}
         customerId={id}
         initialValues={customerToFormValues(data.customer)}
         legalAreas={legalAreas}
