@@ -2,12 +2,14 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowUpRight,
   CalendarClock,
   ExternalLink,
   Mail,
   MapPin,
   Megaphone,
   MessageCircle,
+  Paperclip,
   Pencil,
   Phone,
   ShieldCheck,
@@ -34,7 +36,7 @@ type LeadDetailViewProps = {
 };
 
 export function LeadDetailView({ data }: LeadDetailViewProps) {
-  const { events, lead, notes } = data;
+  const { attachments, events, lead, notes } = data;
   const canConvert = !lead.convertedAt;
   const canMarkLost = !lead.lostAt && !lead.convertedAt;
 
@@ -200,6 +202,56 @@ export function LeadDetailView({ data }: LeadDetailViewProps) {
         </Card>
       ) : null}
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Documentos do lead</CardTitle>
+          <CardDescription>
+            Arquivos recebidos no atendimento e salvos no perfil comercial.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {attachments.length > 0 ? (
+            <div className="max-h-[420px] space-y-3 overflow-y-auto pr-2">
+              {attachments.map((attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex flex-col gap-3 rounded-md border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {attachment.fileName}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {[attachment.fileType, formatFileSize(attachment.fileSize)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Salvo por {attachment.savedByName || "Equipe"} em{" "}
+                      {formatDateTime(attachment.savedAt)}
+                    </p>
+                  </div>
+                  {attachment.downloadUrl ? (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={attachment.downloadUrl} target="_blank" rel="noreferrer">
+                        Abrir
+                        <ArrowUpRight className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Paperclip}
+              title="Nenhum documento salvo"
+              description="Documentos recebidos no atendimento aparecerão aqui quando forem salvos pelo chat."
+            />
+          )}
+        </CardContent>
+      </Card>
+
       <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)]">
         <Card className="min-h-0">
           <CardHeader>
@@ -324,6 +376,16 @@ function TextBlock({ fallback, value }: { fallback: string; value: string | null
       {value || fallback}
     </p>
   );
+}
+
+function formatFileSize(value: number | null) {
+  if (!value) return "Tamanho não informado";
+
+  if (value < 1024 * 1024) {
+    return `${Math.ceil(value / 1024)} KB`;
+  }
+
+  return `${(value / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function formatDateTime(value: string) {

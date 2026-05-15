@@ -99,6 +99,7 @@ type MessageAttachmentRow = {
   file_size: number | null;
   file_type: string | null;
   id: string;
+  saved_to_profile_at: string | null;
   storage_bucket: string;
   storage_path: string;
 };
@@ -154,6 +155,7 @@ export type ConversationMessageAttachment = {
   fileSize: number | null;
   fileType: string | null;
   id: string;
+  savedToProfileAt: string | null;
   signedUrl: string | null;
 };
 
@@ -449,6 +451,7 @@ async function signAttachment(
     fileSize: row.file_size,
     fileType: row.file_type,
     id: row.id,
+    savedToProfileAt: row.saved_to_profile_at,
     signedUrl: data?.signedUrl ?? null,
   };
 }
@@ -685,7 +688,7 @@ export async function getConversationInbox(
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
     .select(
-      "id,direction,kind,body,metadata,delivery_status,delivery_error,retry_count,sent_at,created_at,sender:profiles!messages_sender_profile_id_fkey(full_name,email),attachments(id,file_name,file_size,file_type,storage_bucket,storage_path)",
+      "id,direction,kind,body,metadata,delivery_status,delivery_error,retry_count,sent_at,created_at,sender:profiles!messages_sender_profile_id_fkey(full_name,email),attachments(id,file_name,file_size,file_type,saved_to_profile_at,storage_bucket,storage_path)",
     )
     .eq("conversation_id", selectedId)
     .order("sent_at", { ascending: true });

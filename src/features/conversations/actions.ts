@@ -92,6 +92,23 @@ const pauseAiSchema = z.object({
 });
 
 type RelatedPhone = { phone: string | null };
+type AttachmentForProfileRow = {
+  customer_id: string | null;
+  file_name: string;
+  file_type: string | null;
+  id: string;
+  lead_id: string | null;
+  message_id: string | null;
+  saved_to_profile_at: string | null;
+};
+
+type AttachmentMessageRow = {
+  conversation_id: string;
+  direction: "inbound" | "internal" | "outbound";
+  id: string;
+  kind: string;
+  lead_id: string | null;
+};
 
 function relatedOne<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
@@ -127,6 +144,10 @@ function getConversationPhone(conversation: Awaited<ReturnType<typeof getConvers
   const lead = relatedOne(conversation.leads as RelatedPhone | RelatedPhone[] | null);
 
   return contact?.phone ?? lead?.phone ?? null;
+}
+
+function isAttachmentEligibleForProfile(fileType: string | null, messageKind: string) {
+  return messageKind !== "audio" && !fileType?.startsWith("audio/");
 }
 
 async function getCustomerIdByLeadId(leadId: string | null) {
@@ -225,6 +246,140 @@ async function uploadConversationAttachment(params: {
   }
 
   return null;
+}
+
+export async function saveConversationAttachmentToProfile(
+  conversationId: string,
+  attachmentId: string,
+): Promise<ConversationActionState> {
+  const user = await assertConversationWriteAccess();
+  const supabase = await createClient();
+  const conversation = await getConversationForAction(conversationId);
+
+  const { data: attachmentData, error: attachmentError } = await supabase
+    .from("attachments")
+    .select("id,lead_id,customer_id,message_id,file_name,file_type,saved_to_profile_at")
+    .eq("id", attachmentId)
+    .maybeSingle();
+
+  if (attachmentError || !attachmentData) {
+    return {
+      message: "Não foi possível localizar o documento.",
+      ok: false,
+    };
+  }
+
+  const attachment = attachmentData as AttachmentForProfileRow;
+
+  if (!attachment.message_id) {
+    return {
+      message: "Este anexo não pertence a uma mensagem do atendimento.",
+      ok: false,
+    };
+  }
+
+  const { data: messageData, error: messageError } = await supabase
+    .from("messages")
+    .select("id,conversation_id,direction,kind,lead_id")
+    .eq("id", attachment.message_id)
+    .maybeSingle();
+
+  if (messageError || !messageData) {
+    return {
+      message: "Não foi possível validar a mensagem do documento.",
+      ok: false,
+    };
+  }
+
+  const message = messageData as AttachmentMessageRow;
+
+  if (message.conversation_id !== conversation.id) {
+    return {
+      message: "Este documento não pertence a esta conversa.",
+      ok: false,
+    };
+  }
+
+  if (message.direction !== "inbound") {
+    return {
+      message: "Somente documentos recebidos do cliente podem ser salvos no perfil.",
+      ok: false,
+    };
+  }
+
+  if (!isAttachmentEligibleForProfile(attachment.file_type, message.kind)) {
+    return {
+      message: "Áudios permanecem no histórico do atendimento.",
+      ok: false,
+    };
+  }
+
+  const leadId = conversation.lead_id ?? message.lead_id ?? attachment.lead_id;
+
+  if (!leadId) {
+    return {
+      message: "Vincule a conversa a um lead antes de salvar o documento no perfil.",
+      ok: false,
+    };
+  }
+
+  const customerId = await getCustomerIdByLeadId(leadId);
+  const now = new Date().toISOString();
+  const wasAlreadySaved = Boolean(attachment.saved_to_profile_at);
+  const needsUpdate =
+    !wasAlreadySaved ||
+    attachment.lead_id !== leadId ||
+    (customerId !== null && attachment.customer_id !== customerId);
+
+  if (needsUpdate) {
+    const { error: updateError } = await supabase
+      .from("attachments")
+      .update({
+        customer_id: customerId,
+        lead_id: leadId,
+        saved_to_profile_at: attachment.saved_to_profile_at ?? now,
+        saved_to_profile_by: user.id,
+      })
+      .eq("id", attachment.id);
+
+    if (updateError) {
+      return {
+        message: "Não foi possível salvar o documento no perfil.",
+        ok: false,
+      };
+    }
+  }
+
+  if (!wasAlreadySaved) {
+    await registerConversationEvent({
+      actorId: user.id,
+      description: customerId
+        ? "Documento do atendimento salvo no perfil do cliente."
+        : "Documento do atendimento salvo no perfil do lead.",
+      eventType: "conversation_attachment_saved_to_profile",
+      leadId,
+      metadata: {
+        attachmentId: attachment.id,
+        customerId,
+        fileName: attachment.file_name,
+        fileType: attachment.file_type,
+      },
+    });
+  }
+
+  revalidateConversationPaths(conversation.id, leadId);
+  revalidatePath(`/crm/leads/${leadId}`);
+
+  if (customerId) {
+    revalidatePath("/crm/clientes");
+    revalidatePath(`/crm/clientes/${customerId}`);
+  }
+
+  return {
+    message: wasAlreadySaved ? "Documento já estava salvo no perfil." : "Documento salvo no perfil.",
+    ok: true,
+    refresh: true,
+  };
 }
 
 async function registerConversationEvent(params: {

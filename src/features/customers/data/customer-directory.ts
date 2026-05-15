@@ -40,6 +40,8 @@ export type CustomerAttachment = {
   fileSize: number | null;
   fileType: string | null;
   id: string;
+  savedAt: string | null;
+  savedByName: string | null;
   uploadedAt: string;
   uploadedByName: string | null;
 };
@@ -141,6 +143,8 @@ type AttachmentRow = {
   file_size: number | null;
   file_type: string | null;
   id: string;
+  saved_by_profile?: RelatedProfile | RelatedProfile[] | null;
+  saved_to_profile_at: string | null;
   storage_bucket: string;
   storage_path: string;
   uploaded_by_profile?: RelatedProfile | RelatedProfile[] | null;
@@ -298,7 +302,8 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
     customerNotesResult,
     leadNotesResult,
     eventsResult,
-    attachmentsResult,
+    customerAttachmentsResult,
+    leadAttachmentsResult,
     conversationResult,
   ] =
     await Promise.all([
@@ -333,10 +338,20 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
       supabase
         .from("attachments")
         .select(
-          "id,storage_bucket,storage_path,file_name,file_type,file_size,created_at,uploaded_by_profile:profiles!attachments_uploaded_by_fkey(full_name,email)",
+          "id,storage_bucket,storage_path,file_name,file_type,file_size,created_at,saved_to_profile_at,uploaded_by_profile:profiles!attachments_uploaded_by_fkey(full_name,email),saved_by_profile:profiles!attachments_saved_to_profile_by_fkey(full_name,email)",
         )
         .eq("customer_id", id)
         .order("created_at", { ascending: false }),
+      leadId
+        ? supabase
+            .from("attachments")
+            .select(
+              "id,storage_bucket,storage_path,file_name,file_type,file_size,created_at,saved_to_profile_at,uploaded_by_profile:profiles!attachments_uploaded_by_fkey(full_name,email),saved_by_profile:profiles!attachments_saved_to_profile_by_fkey(full_name,email)",
+            )
+            .eq("lead_id", leadId)
+            .not("saved_to_profile_at", "is", null)
+            .order("saved_to_profile_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
       leadId
         ? supabase
             .from("conversations")
@@ -354,7 +369,8 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
     customerNotesResult.error ||
     leadNotesResult.error ||
     eventsResult.error ||
-    attachmentsResult.error ||
+    customerAttachmentsResult.error ||
+    leadAttachmentsResult.error ||
     conversationResult.error
   ) {
     throw new Error("Não foi possível carregar o histórico do cliente.");
@@ -364,7 +380,14 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
   const conversation = conversationResult.data as ConversationRow | null;
 
   const attachments = await Promise.all(
-    ((attachmentsResult.data ?? []) as AttachmentRow[]).map(async (attachment) => {
+    Array.from(
+      new Map(
+        [
+          ...((customerAttachmentsResult.data ?? []) as AttachmentRow[]),
+          ...((leadAttachmentsResult.data ?? []) as AttachmentRow[]),
+        ].map((attachment) => [attachment.id, attachment]),
+      ).values(),
+    ).map(async (attachment) => {
       const { data } = await supabase.storage
         .from(attachment.storage_bucket)
         .createSignedUrl(attachment.storage_path, 60 * 10);
@@ -375,6 +398,8 @@ export async function getCustomerById(id: string): Promise<CustomerDetailData> {
         fileSize: attachment.file_size,
         fileType: attachment.file_type,
         id: attachment.id,
+        savedAt: attachment.saved_to_profile_at,
+        savedByName: profileLabel(relatedOne(attachment.saved_by_profile)),
         uploadedAt: attachment.created_at,
         uploadedByName: profileLabel(relatedOne(attachment.uploaded_by_profile)),
       };

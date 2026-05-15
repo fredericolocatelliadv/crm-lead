@@ -66,6 +66,16 @@ export type LeadNoteItem = {
   id: string;
 };
 
+export type LeadAttachmentItem = {
+  downloadUrl: string | null;
+  fileName: string;
+  fileSize: number | null;
+  fileType: string | null;
+  id: string;
+  savedAt: string;
+  savedByName: string | null;
+};
+
 export type LeadListData = {
   assignees: LeadOption[];
   filters: LeadFilters;
@@ -77,6 +87,7 @@ export type LeadListData = {
 
 export type LeadDetailData = {
   assignees: LeadOption[];
+  attachments: LeadAttachmentItem[];
   events: LeadEventItem[];
   lead: LeadDetail;
   notes: LeadNoteItem[];
@@ -135,6 +146,18 @@ type LeadNoteRow = {
   content: string;
   created_at: string;
   id: string;
+};
+
+type LeadAttachmentRow = {
+  created_at: string;
+  file_name: string;
+  file_size: number | null;
+  file_type: string | null;
+  id: string;
+  saved_by_profile?: RelatedProfile | RelatedProfile[] | null;
+  saved_to_profile_at: string | null;
+  storage_bucket: string;
+  storage_path: string;
 };
 
 type ConversationRow = {
@@ -388,7 +411,7 @@ export async function getLeadById(id: string): Promise<LeadDetailData> {
     notFound();
   }
 
-  const [options, eventsResult, notesResult, conversationResult] = await Promise.all([
+  const [options, eventsResult, notesResult, attachmentsResult, conversationResult] = await Promise.all([
     optionsPromise,
     supabase
       .from("lead_events")
@@ -401,6 +424,14 @@ export async function getLeadById(id: string): Promise<LeadDetailData> {
       .eq("lead_id", id)
       .order("created_at", { ascending: false }),
     supabase
+      .from("attachments")
+      .select(
+        "id,storage_bucket,storage_path,file_name,file_type,file_size,created_at,saved_to_profile_at,saved_by_profile:profiles!attachments_saved_to_profile_by_fkey(full_name,email)",
+      )
+      .eq("lead_id", id)
+      .not("saved_to_profile_at", "is", null)
+      .order("saved_to_profile_at", { ascending: false }),
+    supabase
       .from("conversations")
       .select("id")
       .eq("lead_id", id)
@@ -410,7 +441,7 @@ export async function getLeadById(id: string): Promise<LeadDetailData> {
       .maybeSingle(),
   ]);
 
-  if (eventsResult.error || notesResult.error || conversationResult.error) {
+  if (eventsResult.error || notesResult.error || attachmentsResult.error || conversationResult.error) {
     throw new Error("Não foi possível carregar o histórico do lead.");
   }
 
@@ -430,6 +461,23 @@ export async function getLeadById(id: string): Promise<LeadDetailData> {
 
   return {
     assignees: options.assignees,
+    attachments: await Promise.all(
+      ((attachmentsResult.data ?? []) as LeadAttachmentRow[]).map(async (attachment) => {
+        const { data } = await supabase.storage
+          .from(attachment.storage_bucket)
+          .createSignedUrl(attachment.storage_path, 60 * 10);
+
+        return {
+          downloadUrl: data?.signedUrl ?? null,
+          fileName: attachment.file_name,
+          fileSize: attachment.file_size,
+          fileType: attachment.file_type,
+          id: attachment.id,
+          savedAt: attachment.saved_to_profile_at ?? attachment.created_at,
+          savedByName: profileLabel(relatedOne(attachment.saved_by_profile)),
+        };
+      }),
+    ),
     events: ((eventsResult.data ?? []) as LeadEventRow[]).map((event) => ({
       actorName: profileLabel(relatedOne(event.actor)),
       createdAt: event.created_at,

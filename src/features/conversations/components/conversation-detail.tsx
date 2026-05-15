@@ -15,7 +15,10 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { retryConversationMessage } from "@/features/conversations/actions";
+import {
+  retryConversationMessage,
+  saveConversationAttachmentToProfile,
+} from "@/features/conversations/actions";
 import {
   ConversationDetailActions,
   ConversationReplyComposer,
@@ -211,7 +214,12 @@ export function ConversationDetail({
         ) : (
           <div className="flex flex-col gap-3">
             {conversation.messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble
+                key={message.id}
+                canSaveAttachmentsToProfile={Boolean(conversation.lead)}
+                conversationId={conversation.id}
+                message={message}
+              />
             ))}
           </div>
         )}
@@ -303,7 +311,15 @@ function ConversationCommercialContext({
   );
 }
 
-function MessageBubble({ message }: { message: ConversationMessage }) {
+function MessageBubble({
+  canSaveAttachmentsToProfile,
+  conversationId,
+  message,
+}: {
+  canSaveAttachmentsToProfile: boolean;
+  conversationId: string;
+  message: ConversationMessage;
+}) {
   const isOutbound = message.direction === "outbound";
   const isInternal = message.direction === "internal";
 
@@ -379,6 +395,8 @@ function MessageBubble({ message }: { message: ConversationMessage }) {
               <MessageAttachment
                 key={attachment.id}
                 attachment={attachment}
+                canSaveToProfile={canSaveAttachmentsToProfile}
+                conversationId={conversationId}
                 direction={message.direction}
               />
             ))}
@@ -426,13 +444,17 @@ function MessageDeliveryStatus({ message }: { message: ConversationMessage }) {
 
 function MessageAttachment({
   attachment,
+  canSaveToProfile,
+  conversationId,
   direction,
 }: {
   attachment: ConversationMessageAttachment;
+  canSaveToProfile: boolean;
+  conversationId: string;
   direction: ConversationMessage["direction"];
 }) {
-  const isAudio = attachment.fileType?.startsWith("audio/");
-  const isImage = attachment.fileType?.startsWith("image/");
+  const isAudio = Boolean(attachment.fileType?.startsWith("audio/"));
+  const isImage = Boolean(attachment.fileType?.startsWith("image/"));
   const audioDirectionLabel = direction === "outbound" ? "enviado" : "recebido";
   const documentDirectionLabel = direction === "outbound" ? "enviado" : "recebido";
   const imageDirectionLabel = direction === "outbound" ? "enviada" : "recebida";
@@ -454,55 +476,130 @@ function MessageAttachment({
 
   if (isImage && attachment.signedUrl) {
     return (
-      <a
-        href={attachment.signedUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="block overflow-hidden rounded-md border bg-background/70 text-foreground transition-colors hover:border-primary/50"
-      >
-        <div className="flex items-center gap-2 border-b px-3 py-2 text-xs font-semibold">
-          <ImageIcon className="h-3.5 w-3.5" />
-          Imagem {imageDirectionLabel}
+      <div className="overflow-hidden rounded-md border bg-background/70 text-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <ImageIcon className="h-3.5 w-3.5" />
+            Imagem {imageDirectionLabel}
+          </div>
+          <AttachmentProfileSaveAction
+            attachment={attachment}
+            canSave={canSaveToProfile}
+            conversationId={conversationId}
+            direction={direction}
+            isAudio={isAudio}
+          />
         </div>
-        <img
-          src={attachment.signedUrl}
-          alt={attachment.fileName}
-          className="max-h-[360px] w-full max-w-[520px] object-contain"
-        />
-      </a>
+        <a
+          href={attachment.signedUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="block transition-colors hover:bg-muted/30"
+        >
+          <img
+            src={attachment.signedUrl}
+            alt={attachment.fileName}
+            className="max-h-[360px] w-full max-w-[520px] object-contain"
+          />
+        </a>
+      </div>
     );
   }
 
   if (attachment.signedUrl) {
     return (
-      <a
-        href={attachment.signedUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="flex items-center gap-3 rounded-md border bg-background/70 p-3 text-foreground transition-colors hover:border-primary/50"
-      >
+      <div className="flex flex-col gap-3 rounded-md border bg-background/70 p-3 text-foreground sm:flex-row sm:items-center">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
           <FileText className="h-5 w-5" />
         </div>
-        <div className="min-w-0 flex-1">
+        <a
+          href={attachment.signedUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="min-w-0 flex-1 transition-colors hover:text-primary"
+        >
           <p className="text-xs font-semibold">Documento {documentDirectionLabel}</p>
           <p className="truncate text-sm font-medium">{attachment.fileName}</p>
           <p className="truncate text-xs text-muted-foreground">
             {[attachment.fileType, fileSize].filter(Boolean).join(" · ")}
           </p>
+        </a>
+        <div className="flex shrink-0 items-center gap-2">
+          <AttachmentProfileSaveAction
+            attachment={attachment}
+            canSave={canSaveToProfile}
+            conversationId={conversationId}
+            direction={direction}
+            isAudio={isAudio}
+          />
+          <a
+            href={attachment.signedUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+            aria-label="Abrir documento"
+          >
+            <ArrowUpRight className="h-4 w-4" />
+          </a>
         </div>
-        <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-      </a>
+      </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-md border bg-background/70 p-3 text-foreground">
+    <div className="flex flex-col gap-3 rounded-md border bg-background/70 p-3 text-foreground sm:flex-row sm:items-center">
       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{attachment.fileName}</p>
         <p className="text-xs text-muted-foreground">Arquivo sem link disponível.</p>
       </div>
+      <AttachmentProfileSaveAction
+        attachment={attachment}
+        canSave={canSaveToProfile}
+        conversationId={conversationId}
+        direction={direction}
+        isAudio={isAudio}
+      />
     </div>
+  );
+}
+
+function AttachmentProfileSaveAction({
+  attachment,
+  canSave,
+  conversationId,
+  direction,
+  isAudio,
+}: {
+  attachment: ConversationMessageAttachment;
+  canSave: boolean;
+  conversationId: string;
+  direction: ConversationMessage["direction"];
+  isAudio: boolean;
+}) {
+  if (direction !== "inbound" || isAudio || !canSave) return null;
+
+  if (attachment.savedToProfileAt) {
+    return (
+      <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5" disabled>
+        <Check className="h-3.5 w-3.5" />
+        Salvo no perfil
+      </Button>
+    );
+  }
+
+  async function saveAttachmentToProfile() {
+    "use server";
+
+    await saveConversationAttachmentToProfile(conversationId, attachment.id);
+  }
+
+  return (
+    <form action={saveAttachmentToProfile}>
+      <Button type="submit" variant="outline" size="sm" className="h-8 gap-1.5">
+        <FileText className="h-3.5 w-3.5" />
+        Salvar no perfil
+      </Button>
+    </form>
   );
 }

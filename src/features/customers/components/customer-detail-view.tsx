@@ -186,9 +186,9 @@ export function CustomerDetailView({ data }: CustomerDetailViewProps) {
       <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)]">
         <Card className="min-h-0">
           <CardHeader>
-            <CardTitle>Anexos básicos</CardTitle>
+            <CardTitle>Documentos do cliente</CardTitle>
             <CardDescription>
-              Documentos simples ligados ao histórico comercial do cliente.
+              Arquivos anexados ao cadastro ou salvos a partir do atendimento.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -205,8 +205,9 @@ export function CustomerDetailView({ data }: CustomerDetailViewProps) {
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {formatFileSize(attachment.fileSize)} •{" "}
-                        {attachment.uploadedByName || "Equipe"} em{" "}
-                        {formatDateTime(attachment.uploadedAt)}
+                        {attachment.savedAt
+                          ? `Salvo por ${attachment.savedByName || "Equipe"} em ${formatDateTime(attachment.savedAt)}`
+                          : `${attachment.uploadedByName || "Equipe"} em ${formatDateTime(attachment.uploadedAt)}`}
                       </p>
                     </div>
                     {attachment.downloadUrl ? (
@@ -223,8 +224,8 @@ export function CustomerDetailView({ data }: CustomerDetailViewProps) {
             ) : (
               <EmptyState
                 icon={Paperclip}
-                title="Nenhum anexo registrado"
-                description="Anexos básicos adicionados para este cliente aparecerão aqui."
+                title="Nenhum documento salvo"
+                description="Anexos enviados no cadastro ou salvos pelo chat aparecerão aqui."
               />
             )}
           </CardContent>
